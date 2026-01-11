@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Levantamiento Líneas de Vida</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        :root { --primary: #0056b3; --bg: #f4f4f9; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        .section { display: none; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 20px; }
+        .section.active { display: block; }
+        
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9em; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        
+        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-size: 1em; }
+        button.secondary { background: #6c757d; }
+        button.danger { background: #dc3545; }
+        button:hover { opacity: 0.9; }
+
+        .tramo-card { background: #e9ecef; padding: 15px; margin-top: 10px; border-radius: 5px; border-left: 5px solid var(--primary); }
+        .nav-buttons { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; }
+        
+        /* Estilos para el Canvas de Fotos */
+        #canvas-container { position: relative; width: 100%; max-height: 500px; overflow: hidden; border: 2px dashed #ccc; margin-top: 10px; text-align: center; }
+        canvas { max-width: 100%; touch-action: none; } /* touch-action para dibujar en móvil */
+        
+        .checklist-item { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .checklist-item input { width: auto; margin: 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📏 Levantamiento Técnico</h1>
+    
+    <div class="nav-buttons">
+        <button onclick="showSection('info')" class="secondary">1. Datos</button>
+        <button onclick="showSection('medicion')" class="secondary">2. Mediciones</button>
+        <button onclick="showSection('checklist')" class="secondary">3. Checklist</button>
+        <button onclick="showSection('fotos')" class="secondary">4. Fotos</button>
+        <button onclick="showSection('exportar')" class="secondary">5. Finalizar</button>
+    </div>
+
+    <div id="info" class="section active">
+        <h2>Datos del Proyecto</h2>
+        <label>Cliente / Empresa</label>
+        <input type="text" id="cliente" placeholder="Ej: Construcciones SL">
+        <label>Nombre de la Obra</label>
+        <input type="text" id="obra" placeholder="Ej: Nave Polígono 4">
+        <label>Dirección</label>
+        <input type="text" id="direccion">
+        <label>Fecha</label>
+        <input type="date" id="fecha">
+        <button onclick="showSection('medicion')">Siguiente: Mediciones >></button>
+    </div>
+
+    <div id="medicion" class="section">
+        <h2>Configuración del Sistema</h2>
+        <label>Tipo de Sistema</label>
+        <select id="tipoSistema" onchange="toggleLucernario()">
+            <option value="Linea_Vida">Línea de Vida (Cable)</option>
+            <option value="Rail">Rail Rígido</option>
+            <option value="Barandilla">Barandilla</option>
+            <option value="Lucernario">Protección Lucernario</option>
+        </select>
+
+        <div id="lucernarioFields" style="display:none; background:#fff3cd; padding:10px; margin-top:10px;">
+            <label>Largo (m)</label><input type="number" id="lucLargo">
+            <label>Ancho (m)</label><input type="number" id="lucAncho">
+        </div>
+
+        <div id="lineaFields">
+            <label>Soporte Cubierta</label>
+            <select id="soporte">
+                <option value="Hormigon">Hormigón</option>
+                <option value="Chapa">Chapa Sandwich</option>
+                <option value="Metalica">Estructura Metálica</option>
+                <option value="Deck">Cubierta Deck</option>
+            </select>
+
+            <label>Nº de Curvas (Esquinas)</label>
+            <input type="number" id="numCurvas" value="0" min="0">
+            <button onclick="generarTramos()" class="secondary">Generar Tramos</button>
+            
+            <div id="tramosContainer"></div>
+        </div>
+        
+        <br>
+        <button onclick="showSection('checklist')">Siguiente: Checklist >></button>
+    </div>
+
+    <div id="checklist" class="section">
+        <h2>Seguridad y Accesos</h2>
+        <div class="checklist-item"><input type="checkbox" id="chk_grua"> <label>Necesaria Grúa para materiales</label></div>
+        <div class="checklist-item"><input type="checkbox" id="chk_acceso"> <label>Acceso interior disponible</label></div>
+        <div class="checklist-item"><input type="checkbox" id="chk_fragil"> <label>Cubierta Frágil (Peligro)</label></div>
+        <div class="checklist-item"><input type="checkbox" id="chk_linea_vieja"> <label>Retirar línea antigua</label></div>
+        
+        <label>Notas de Seguridad</label>
+        <textarea id="notasSeguridad" rows="3"></textarea>
+        <button onclick="showSection('fotos')">Siguiente: Fotos >></button>
+    </div>
+
+    <div id="fotos" class="section">
+        <h2>Registro Fotográfico</h2>
+        <p>1. Selecciona o toma una foto. 2. Dibuja encima con el ratón o dedo.</p>
+        <input type="file" id="inputImage" accept="image/*" onchange="cargarImagen(event)">
+        
+        <div id="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div style="margin-top:10px;">
+            <button onclick="activarDibujo()" class="secondary">✏️ Activar Lápiz (Rojo)</button>
+            <button onclick="limpiarDibujo()" class="danger">🗑️ Borrar Dibujo</button>
+            <button onclick="guardarFotoEnMemoria()">💾 Guardar Foto en Reporte</button>
+        </div>
+        <p id="fotoCounter" style="color:green; font-weight:bold;"></p>
+        
+        <button onclick="showSection('exportar')">Siguiente: Finalizar >></button>
+    </div>
+
+    <div id="exportar" class="section">
+        <h2>Finalizar Visita</h2>
+        <p>Revisa los datos antes de exportar.</p>
+        <button onclick="generarPDF()" style="background:#dc3545;">📄 Descargar Presupuesto PDF</button>
+        <button onclick="generarExcel()" style="background:#28a745;">📊 Descargar Excel (Datos)</button>
+    </div>
+
+</div>
+
+<script>
+    // --- ESTADO DE LA APP ---
+    let appData = {
+        tramos: [],
+        fotos: [] // Guardaremos las imágenes en Base64 aquí
+    };
+
+    // --- NAVEGACIÓN ---
+    function showSection(id) {
+        document.querySelectorAll('.section').forEach(d => d.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function toggleLucernario() {
+        const tipo = document.getElementById('tipoSistema').value;
+        if(tipo === 'Lucernario') {
+            document.getElementById('lucernarioFields').style.display = 'block';
+            document.getElementById('lineaFields').style.display = 'none';
+        } else {
+            document.getElementById('lucernarioFields').style.display = 'none';
+            document.getElementById('lineaFields').style.display = 'block';
+        }
+    }
+
+    // --- LÓGICA DE TRAMOS ---
+    function generarTramos() {
+        const container = document.getElementById('tramosContainer');
+        container.innerHTML = '';
+        const curvas = parseInt(document.getElementById('numCurvas').value) || 0;
+        const tramosTotales = curvas + 1;
+
+        for (let i = 1; i <= tramosTotales; i++) {
+            let esUltimo = (i === tramosTotales);
+            let html = `
+                <div class="tramo-card">
+                    <strong>Tramo ${i} (Recto)</strong>
+                    <label>Longitud (m):</label> <input type="number" class="tramo-longitud">
+                    <label>Inclinación (Grados):</label> <input type="number" class="tramo-inclinacion">
+                    <label>Fijación al Final:</label>
+                    <select class="tramo-fijacion">
+                        <option value="Poste_Paso">Poste de Paso</option>
+                        <option value="Curva">Curva (Esquina)</option>
+                        <option value="Fin_Linea">Fin de Línea</option>
+                    </select>
+            `;
+            
+            if (!esUltimo) {
+                html += `<label>Ángulo Curva siguiente (º):</label> <input type="number" class="tramo-angulo" placeholder="90, 45...">`;
+            }
+            
+            html += `</div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+    }
+
+    // --- LÓGICA DE FOTOS Y CANVAS ---
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let imgObj = new Image();
+
+    function cargarImagen(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            imgObj.onload = function() {
+                // Ajustar canvas al tamaño de la imagen (limitado a ancho de pantalla)
+                const ratio = imgObj.height / imgObj.width;
+                canvas.width = 600; // Ancho fijo interno
+                canvas.height = 600 * ratio;
+                ctx.drawImage(imgObj, 0, 0, canvas.width, canvas.height);
+            }
+            imgObj.src = event.target.result;
+        }
+        reader.readAsDataURL(e.target.files[0]);
+    }
+
+    function activarDibujo() {
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "red";
+        
+        // Eventos Ratón
+        canvas.onmousedown = startDraw;
+        canvas.onmousemove = draw;
+        canvas.onmouseup = endDraw;
+        
+        // Eventos Táctiles (Móvil)
+        canvas.ontouchstart = (e) => { e.preventDefault(); startDraw(e.touches[0]); };
+        canvas.ontouchmove = (e) => { e.preventDefault(); draw(e.touches[0]); };
+        canvas.ontouchend = endDraw;
+    }
+
+    function startDraw(e) {
+        isDrawing = true;
+        ctx.beginPath();
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        ctx.moveTo(x, y);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    }
+
+    function endDraw() { isDrawing = false; }
+    function limpiarDibujo() { ctx.drawImage(imgObj, 0, 0, canvas.width, canvas.height); }
+
+    function guardarFotoEnMemoria() {
+        // Guardamos la imagen editada como Base64
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        appData.fotos.push(dataUrl);
+        document.getElementById('fotoCounter').innerText = `✅ ${appData.fotos.length} fotos guardadas.`;
+        alert("Foto guardada en memoria temporal.");
+    }
+
+    // --- GENERACIÓN PDF ---
+    function generarPDF() {
+        // Recopilar datos de Tramos
+        let tramosText = [];
+        document.querySelectorAll('.tramo-card').forEach((card, index) => {
+            let l = card.querySelector('.tramo-longitud').value;
+            let ang = card.querySelector('.tramo-inclinacion').value;
+            tramosText.push([ `Tramo ${index+1}`, `${l} m`, `${ang}º` ]);
+        });
+
+        // Definición del documento
+        var docDefinition = {
+            content: [
+                { text: 'PRESUPUESTO ORIENTATIVO', style: 'header' },
+                { text: `Obra: ${document.getElementById('obra').value}` },
+                { text: `Cliente: ${document.getElementById('cliente').value}` },
+                { text: `Fecha: ${document.getElementById('fecha').value}`, margin: [0,0,0,20] },
+                
+                { text: 'Detalle de Tramos', style: 'subheader' },
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: ['*', '*', '*'],
+                        body: [ ['Nombre', 'Longitud', 'Inclinación'], ...tramosText ]
+                    }
+                },
+                
+                { text: 'Checklist de Seguridad', style: 'subheader', margin: [0,20,0,5] },
+                { ul: [
+                    `Grúa Necesaria: ${document.getElementById('chk_grua').checked ? 'SÍ' : 'NO'}`,
+                    `Cubierta Frágil: ${document.getElementById('chk_fragil').checked ? 'SÍ' : 'NO'}`,
+                    `Notas: ${document.getElementById('notasSeguridad').value}`
+                ]},
+
+                { text: 'Fotos de la Visita', style: 'subheader', margin: [0,20,0,5] },
+                // Insertamos las fotos guardadas
+                ...appData.fotos.map(f => ({ image: f, width: 500, margin: [0, 5] }))
+            ],
+            styles: {
+                header: { fontSize: 22, bold: true },
+                subheader: { fontSize: 16, bold: true, margin: [0, 10, 0, 5] }
+            }
+        };
+
+        pdfMake.createPdf(docDefinition).download(`presupuesto_${document.getElementById('obra').value}.pdf`);
+    }
+
+    // --- GENERACIÓN EXCEL ---
+    function generarExcel() {
+        let wb = XLSX.utils.book_new();
+        
+        // Hoja 1: Datos Generales
+        let dataGeneral = [
+            ["Campo", "Valor"],
+            ["Cliente", document.getElementById('cliente').value],
+            ["Obra", document.getElementById('obra').value],
+            ["Sistema", document.getElementById('tipoSistema').value],
+            ["Soporte", document.getElementById('soporte').value]
+        ];
+        
+        // Añadir Tramos al Excel
+        document.querySelectorAll('.tramo-card').forEach((card, index) => {
+            let l = card.querySelector('.tramo-longitud').value;
+            dataGeneral.push([`Tramo ${index+1} Longitud`, l]);
+        });
+
+        let ws = XLSX.utils.aoa_to_sheet(dataGeneral);
+        XLSX.utils.book_append_sheet(wb, ws, "Datos");
+        XLSX.writeFile(wb, `datos_${document.getElementById('obra').value}.xlsx`);
+    }
+
+    // Poner fecha de hoy por defecto
+    document.getElementById('fecha').valueAsDate = new Date();
+</script>
+
+</body>
+</html>

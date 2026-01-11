@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Toma de Datos v19 (Precision Fix)</title>
+    <style>
+        :root { --p: #0056b3; --a: #e67e22; --bg: #f4f6f8; --s: #27ae60; --d: #c0392b; }
+        body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0 0 90px 0; -webkit-tap-highlight-color: transparent; }
+        
+        /* HEADER & TABS */
+        header { background: var(--p); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; }
+        .nav-tabs { display: flex; background: white; border-bottom: 1px solid #ddd; position: sticky; top: 50px; z-index: 900; overflow-x: auto; }
+        .tab-btn { flex: 1; padding: 15px 10px; border: none; background: none; font-weight: 600; color: #7f8c8d; cursor: pointer; white-space: nowrap; }
+        .tab-btn.active { color: var(--p); border-bottom: 4px solid var(--p); background: #f8f9fa; }
+        
+        /* LAYOUT */
+        .container { max-width: 800px; margin: 0 auto; padding: 10px; }
+        .section { display: none; } .section.active { display: block; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        h2 { font-size: 1rem; color: var(--p); border-bottom: 1px solid #eee; padding-bottom: 5px; margin: 0 0 10px 0; }
+        
+        /* FORMS */
+        label { display: block; margin-top: 10px; font-weight: 600; font-size: 0.85rem; color: #333; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        .check-group { display: flex; align-items: center; padding: 8px 0; } .check-group input { width: 20px; height: 20px; margin-right: 10px; }
+        
+        /* BUTTONS */
+        button { cursor: pointer; -webkit-appearance: none; font-family: inherit; }
+        .btn-full { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; margin-top: 10px; text-align: center; }
+        .btn-add { background: var(--s); color: white; }
+        .btn-mini { padding: 6px 12px; font-size: 0.85rem; background: #666; color: white; border: none; border-radius: 4px; margin-top: 5px; }
+        .btn-save { background: var(--p); color: white; }
+        .btn-overlay { background: #6f42c1; color: white; }
+        .remove-btn { float: right; color: var(--d); background: none; border: none; font-size: 1.5rem; padding: 0 10px; }
+        
+        .sys-selector { display: flex; gap: 10px; }
+        .sys-btn { flex: 1; padding: 15px; border: 2px solid #ddd; border-radius: 8px; background: white; font-weight: bold; text-align: center; }
+        .sys-btn.active { border-color: var(--p); background: #ebf5fb; color: var(--p); }
+        
+        /* CANVAS & TABLES */
+        #geo-preview-container { width: 100%; height: 300px; background: #2c3e50; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: center; position: sticky; top: 110px; z-index: 80; }
+        canvas { display: block; touch-action: none; /* CRITICAL FOR DRAWING */ }
+        .bom-overlay { position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .bom-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 10px; }
+        .bom-table th { background: #eee; text-align: left; padding: 5px; } .bom-table td { padding: 5px; border-bottom: 1px solid #eee; }
+        
+        /* UTILS */
+        .hidden { display: none !important; }
+        .tramo-card { background: #fdfdfd; border-left: 4px solid var(--a); padding: 10px; margin-bottom: 10px; border: 1px solid #eee; }
+        .config-card { border-left: 4px solid var(--p); background: #eef2f5; }
+        .manual-point-row { display: flex; gap: 5px; margin-top: 5px; align-items: center; background: #fff; padding: 5px; border: 1px solid #eee; }
+        
+        /* FOTOS */
+        #canvas-container { position: relative; width: 100%; height: 300px; border: 2px dashed #ccc; margin: 10px 0; background: #eee; display: flex; justify-content: center; overflow: hidden; touch-action: none; }
+        .thumb { width: 60px; height: 60px; object-fit: cover; margin: 2px; border: 1px solid #ccc; }
+        .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px; background: white; border-top: 1px solid #ddd; z-index: 999; box-sizing: border-box; display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<header><h1>Toma de Datos v19</h1></header>
+
+<div class="nav-tabs">
+    <button class="tab-btn active" data-tab="tab-general">1. General</button>
+    <button class="tab-btn" data-tab="tab-tecnico">2. Soportes</button>
+    <button class="tab-btn" data-tab="tab-geometria">3. Plano</button>
+    <button class="tab-btn" data-tab="tab-fotos">4. Fotos</button>
+</div>
+
+<div class="container">
+    <div id="tab-general" class="section active">
+        <div class="card">
+            <h2>Proyecto</h2>
+            <label>Cliente</label><input type="text" id="g-client">
+            <label>Obra</label><input type="text" id="g-site">
+            <label>Fecha</label><input type="date" id="g-date">
+        </div>
+        <div class="card">
+            <h2>Sistema</h2>
+            <div class="sys-selector">
+                <div class="sys-btn active" id="btn-barandilla" data-sys="barandilla">Barandilla</div>
+                <div class="sys-btn" id="btn-linea" data-sys="linea_vida">Línea Vida</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-tecnico" class="section">
+        <div id="tech-barandilla">
+            <div class="card">
+                <h2>Fijación</h2>
+                <select id="b-fix-type">
+                    <option value="contrapeso">Autoportante</option>
+                    <option value="metalica">Metal</option>
+                    <option value="hormigon">Hormigón</option>
+                </select>
+                <div id="opts-b-contrapeso">
+                    <label>Superficie</label><select id="b-surface"><option value="grava">Grava</option><option value="asfaltica">Asfáltica</option><option value="pvc">PVC</option></select>
+                </div>
+            </div>
+        </div>
+        <div id="tech-linea" class="hidden">
+            <div class="card config-card">
+                <h2>BOM</h2>
+                <label>Variante</label><select id="lv-variant"><option value="Ends10">Ends10</option><option value="Ends50">Ends50</option></select>
+                <div id="group-ends10">
+                    <label>Extremo (EB)</label><select id="lv-eb-model"></select>
+                    <div class="check-group"><input type="checkbox" id="chk-shock"><label>Absorbedores</label></div>
+                    <div id="opts-shock" class="hidden"><label>Cant.</label><input type="number" id="lv-shock-qty" value="0"><label>Tipo</label><select id="lv-shock-type"><option value="SHOCK10">Shock10</option><option value="SHOCK11">Shock11</option></select></div>
+                </div>
+                <label>Intermedio (SZH)</label><select id="lv-szh-model"></select>
+            </div>
+            <div class="card">
+                <h2>Soporte</h2>
+                <select id="lv-support-type"><option value="sand02">Chapa (Sand02)</option><option value="poste">Poste</option></select>
+                <div id="opts-lv-chapa"><label>Espesor</label><select id="lv-chapa-thick"><option value="0.5">0.5mm</option><option value="0.6">0.6mm</option><option value="0.7">0.7mm</option></select></div>
+                <div id="opts-lv-poste" class="hidden"><label>Modelo</label><select id="lv-post-model"></select></div>
+            </div>
+        </div>
+        <div class="card"><h2>Acceso</h2><div class="check-group"><input type="checkbox" id="chk-grua"><label>Grúa</label></div><textarea id="txt-accesos" rows="2" placeholder="Notas..."></textarea></div>
+    </div>
+
+    <div id="tab-geometria" class="section">
+        <div id="geo-preview-container">
+            <canvas id="geo-canvas" width="600" height="350"></canvas>
+            <div class="bom-overlay" id="bom-display">Items: 0</div>
+        </div>
+        <div class="card" style="padding:0; overflow:hidden;">
+            <table class="bom-table"><thead><tr><th>#</th><th>Tipo</th><th>Montaje</th></tr></thead><tbody id="bom-table-body"></tbody></table>
+        </div>
+        <div id="geo-barandilla">
+            <div class="card">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+                    <div><label>Inicio</label><select id="b-start-conf" class="redraw-trigger"><option value="R41">R41</option><option value="R91">R91</option><option value="R51">R51</option></select></div>
+                    <div><label>Fin</label><select id="b-end-conf" class="redraw-trigger"><option value="R41">R41</option><option value="R91">R91</option><option value="R51">R51</option></select></div>
+                </div>
+            </div>
+            <div id="b-tramos-list"></div>
+            <button type="button" class="btn-full btn-add" id="btn-add-tramo-bar">+ Tramo</button>
+        </div>
+        <div id="geo-linea" class="hidden">
+            <div class="card" style="background:#e3f2fd;"><div class="check-group"><input type="checkbox" id="lv-loop"><label>Cerrado (Loop)</label></div></div>
+            <div id="lv-tramos-list"></div>
+            <button type="button" class="btn-full btn-add" id="btn-add-tramo-lv">+ Segmento</button>
+        </div>
+    </div>
+
+    <div id="tab-fotos" class="section">
+        <div class="card" style="text-align: center;">
+            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none">
+            <button type="button" class="btn-full" style="background:#555; color:white; margin-bottom:10px;" id="btn-take-photo">📷 Tomar Foto</button>
+            <div id="canvas-container"><canvas id="editor"></canvas></div>
+            
+            <div id="overlay-controls" style="display:none; background:#f1f3f5; padding:10px; margin-bottom:10px;">
+                <label style="margin:0;">Ajustar Plano</label>
+                <div style="display:flex; gap:10px; justify-content:center; align-items:center;">
+                    <span>Escala:</span><input type="range" id="overlay-scale" min="0.1" max="3" step="0.1" value="1">
+                    <button type="button" class="btn-mini" style="background:var(--s);" id="btn-fix-overlay">OK</button>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                <button type="button" id="btn-import-plan" class="btn-mini btn-overlay">🗺️ Plano</button>
+                <button type="button" id="btn-tool-draw" class="btn-mini">✏️ Pintar</button>
+                <button type="button" id="btn-tool-clear" class="btn-mini">↺</button>
+                <button type="button" id="btn-save-photo" class="btn-mini btn-save">💾</button>
+            </div>
+        </div>
+        <div class="card"><h3>Galería (<span id="photo-count">0</span>)</h3><div class="gallery" id="gallery-grid"></div></div>
+    </div>
+</div>
+
+<div class="footer-fixed"><button type="button" class="btn-full btn-save" id="btn-export-json">📤 Guardar JSON</button></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // === DATA ===
+    var STA = ['STA-10-400','STA-10-600','STA-10-800','STA-16-500','STA-30-500'];
+    var EB = ['AIO-EB-10','AIO-EB-11','AIO-EB-12','AIO-EB-13','AIO-EB-15','AIO-EB-16','AIO-EB-17'];
+    var SZH = ['AIO-SZH-10','AIO-SZH-11','AIO-SZH-12','AIO-SZH-13','AIO-SZH-15','AIO-SZH-16'];
+    var EDLE = ['AIO-EDLE-10','AIO-EDLE-13','AIO-EDLE-16','AIO-EDLE-19','AIO-EDLE-50'];
+    var EXTRA = ['AIO-EDLE-19','AIO-SZH-10','POSTE-REFUERZO'];
+
+    var sys = 'barandilla';
+    var img = new Image(); var photos = []; 
+    var ov = { on: false, x: 0, y: 0, s: 1.0, drag: false, img: null };
+    var isDrawing = false;
+
+    // === INIT ===
+    try { document.getElementById('g-date').valueAsDate = new Date(); } catch(e){}
+    fillSel('lv-post-model', STA); fillSel('lv-eb-model', EB); fillSel('lv-szh-model', SZH);
+
+    function fillSel(id, arr) {
+        var s = document.getElementById(id);
+        if(s) arr.forEach(function(x){ var o=document.createElement('option'); o.value=x; o.text=x; s.appendChild(o); });
+    }
+    function getOpts(arr) { return arr.map(function(x){return '<option value="'+x+'">'+x+'</option>'}).join(''); }
+
+    // === EVENT LISTENERS (SAFARI SAFE) ===
+    
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var tid = this.getAttribute('data-tab');
+            document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active')});
+            document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+            document.getElementById(tid).classList.add('active');
+            this.classList.add('active');
+            if(tid==='tab-geometria') setTimeout(drawPreview,100);
+        });
+    });
+
+    // System Toggle
+    document.querySelectorAll('.sys-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            sys = this.getAttribute('data-sys');
+            document.querySelectorAll('.sys-btn').forEach(function(b){b.classList.remove('active')});
+            this.classList.add('active');
+            toggleSystemUI();
+        });
+    });
+
+    // Inputs that trigger redraw/logic
+    document.getElementById('b-fix-type').addEventListener('change', function(){ 
+        document.getElementById('opts-b-contrapeso').classList.toggle('hidden', this.value!=='contrapeso'); 
+    });
+    
+    document.getElementById('lv-support-type').addEventListener('change', function(){
+        document.getElementById('opts-lv-chapa').classList.toggle('hidden', this.value!=='sand02');
+        document.getElementById('opts-lv-poste').classList.toggle('hidden', this.value!=='poste');
+        drawPreview();
+    });
+
+    document.getElementById('lv-variant').addEventListener('change', function(){
+        document.getElementById('group-ends10').classList.toggle('hidden', this.value==='Ends50');
+        drawPreview();
+    });
+
+    document.getElementById('chk-shock').addEventListener('change', function(){
+        document.getElementById('opts-shock').classList.toggle('hidden', !this.checked);
+    });
+
+    // Redraw triggers
+    var redrawEls = document.querySelectorAll('select, input');
+    redrawEls.forEach(function(el){ 
+        if(el.id.indexOf('lv-')===0 || el.id.indexOf('b-')===0) el.addEventListener('input', drawPreview);
+    });
+
+    // Add Tramos Buttons
+    document.getElementById('btn-add-tramo-bar').addEventListener('click', addBarTramo);
+    document.getElementById('btn-add-tramo-lv').addEventListener('click', addLvTramo);
+
+    // Dynamic Lists (Event Delegation)
+    document.getElementById('b-tramos-list').addEventListener('click', handleDynamicClick);
+    document.getElementById('b-tramos-list').addEventListener('input', drawPreview);
+    document.getElementById('lv-tramos-list').addEventListener('click', handleDynamicClick);
+    document.getElementById('lv-tramos-list').addEventListener('input', drawPreview);
+
+    // Photos
+    document.getElementById('btn-take-photo').addEventListener('click', function(){ document.getElementById('cam-input').click(); });
+    document.getElementById('cam-input').addEventListener('change', loadPhoto);
+    document.getElementById('btn-import-plan').addEventListener('click', importPlan);
+    document.getElementById('btn-fix-overlay').addEventListener('click', fixOverlay);
+    document.getElementById('overlay-scale').addEventListener('input', renderEditor);
+    document.getElementById('btn-tool-draw').addEventListener('click', function(){ ov.on=false; isDrawing=true; });
+    document.getElementById('btn-tool-clear').addEventListener('click', function(){ img.src=img.src; setTimeout(renderEditor,50); });
+    document.getElementById('btn-save-photo').addEventListener('click', savePhoto);
+    document.getElementById('btn-export-json').addEventListener('click', exportJSON);
+
+    // === LOGIC ===
+
+    function toggleSystemUI() {
+        var tb=document.getElementById('tech-barandilla'), tl=document.getElementById('tech-linea');
+        var gb=document.getElementById('geo-barandilla'), gl=document.getElementById('geo-linea');
+        if(sys==='barandilla'){
+            tb.classList.remove('hidden'); tl.classList.add('hidden');
+            gb.classList.remove('hidden'); gl.classList.add('hidden');
+        } else {
+            tl.classList.remove('hidden'); tb.classList.add('hidden');
+            gl.classList.remove('hidden'); gb.classList.add('hidden');
+        }
+        drawPreview();
+    }
+
+    function handleDynamicClick(e) {
+        if(e.target.classList.contains('remove-btn')) {
+            e.target.parentElement.remove();
+            drawPreview();
+        }
+        if(e.target.classList.contains('btn-add-manual')) {
+            var html = '<div class="manual-point-row"><input type="number" class="mp-dist" placeholder="Dist" style="width:60px"><select class="mp-type">'+getOpts(EXTRA)+'</select><button class="remove-btn" style="float:none;font-size:1.2rem;color:red;">×</button></div>';
+            e.target.previousElementSibling.insertAdjacentHTML('beforeend', html);
+        }
+    }
+
+    function addBarTramo() {
+        var c=document.getElementById('b-tramos-list'), n=c.children.length+1;
+        var html = '<div class="tramo-card b-tramo"><button class="remove-btn">×</button><h3>Tramo '+n+'</h3><div style="background:#eee;padding:5px;margin-bottom:5px"><label>'+(n===1?"Dir. Inicial":"Giro")+'</label><input type="number" class="b-angle" value="'+(n===1?0:90)+'"></div><div style="display:grid;grid-template-columns:2fr 1fr;gap:10px"><div><label>Long(m)</label><input type="number" class="b-len" step="0.1"></div><div><label>Rodapié</label><input type="checkbox" class="b-rodapie" style="margin-top:40px"></div></div></div>';
+        c.insertAdjacentHTML('beforeend', html);
+        drawPreview();
+    }
+
+    function addLvTramo() {
+        var c=document.getElementById('lv-tramos-list'), n=c.children.length+1;
+        var sh = n===1 ? '<div style="background:#e8f5e9;padding:5px;margin-bottom:5px"><label>Orientación</label><input type="number" class="lv-start-angle" value="0"></div>' : '';
+        var html = '<div class="tramo-card lv-tramo"><button class="remove-btn">×</button><h3>Segmento '+n+'</h3>'+sh+'<label>Longitud(m)</label><input type="number" class="lv-len" step="0.1" value="0"><div style="margin-top:10px;border-top:1px dashed #ccc;padding-top:5px"><div class="manual-list"></div><button class="btn-mini btn-add-manual">+ Elemento</button></div><div style="margin-top:10px;padding:10px;background:#e3f2fd"><label>Fin:</label><select class="lv-end" onchange="this.nextElementSibling.classList.toggle(\'hidden\',this.value!==\'curva\')"><option value="nada">Recto/Fin</option><option value="curva">Curva</option></select><div class="hidden"><label>Giro(º)</label><input type="number" class="lv-angle" value="90"><label>Modelo</label><select class="lv-curve-type">'+getOpts(EDLE)+'</select></div></div></div>';
+        c.insertAdjacentHTML('beforeend', html);
+        drawPreview();
+    }
+
+    // === CALC & DRAW ===
+    function drawPreview() {
+        var cv=document.getElementById('geo-canvas'), cx=cv.getContext('2d');
+        var w=cv.width, h=cv.height; cx.clearRect(0,0,w,h);
+        var pts=[{x:0,y:0}], ang=0, bom={};
+
+        if(sys==='barandilla') {
+            var trs = document.querySelectorAll('.b-tramo'), tData=[];
+            for(var i=0; i<trs.length; i++) {
+                var aIn = parseFloat(trs[i].querySelector('.b-angle').value)||0;
+                ang = i===0 ? aIn : ang+aIn;
+                var ln = parseFloat(trs[i].querySelector('.b-len').value)||0;
+                tData.push({len:ln, ang:ang});
+                var rd=ang*Math.PI/180, lst=pts[pts.length-1];
+                pts.push({x:lst.x+ln*Math.cos(rd), y:lst.y+ln*Math.sin(rd)});
+            }
+            if(pts.length<2) return;
+            var sc = getScale(pts, w, h);
+            cx.beginPath(); cx.strokeStyle='#e67e22'; cx.lineWidth=4;
+            pts.forEach(function(p,i){ var s=toScr(p,pts,w,h,sc); if(i===0) cx.moveTo(s.x,s.y); else cx.lineTo(s.x,s.y); });
+            cx.stroke();
+            // Posts
+            var sol = solveBar(tData);
+            document.getElementById('bom-display').innerText = "Postes: " + sol.count;
+            if(sol.posts) {
+                tData.forEach(function(t,i){
+                    var start=pts[i], rd=t.ang*Math.PI/180;
+                    (sol.posts[i]||[]).forEach(function(d){
+                        var sx=start.x+d*Math.cos(rd), sy=start.y+d*Math.sin(rd);
+                        var s=toScr({x:sx,y:sy},pts,w,h,sc);
+                        cx.fillStyle='#0056b3'; cx.beginPath(); cx.arc(s.x,s.y,4,0,2*Math.PI); cx.fill();
+                    });
+                });
+            }
+            bom['1'] = "Extremos"; bom['2'] = "Poste S50"; renderBOM(bom);
+        } else {
+            var els=document.querySelectorAll('.lv-tramo'), tData=[], mSet=new Set();
+            for(var i=0; i<els.length; i++) {
+                var ln = parseFloat(els[i].querySelector('.lv-len').value)||0;
+                if(i===0) ang=parseFloat(els[i].querySelector('.lv-start-angle') ? els[i].querySelector('.lv-start-angle').value : 0)||0;
+                var mans=[], rows=els[i].querySelectorAll('.manual-point-row');
+                for(var k=0; k<rows.length; k++){
+                    var typ=rows[k].querySelector('.mp-type').value;
+                    mans.push({d:rows[k].querySelector('.mp-dist').value, t:typ}); mSet.add(typ);
+                }
+                var hasC = els[i].querySelector('.lv-end').value==='curva', cMod=hasC?els[i].querySelector('.lv-curve-type').value:null;
+                if(hasC) mSet.add(cMod);
+                tData.push({len:ln, ang:ang, mans:mans, hasC:hasC, cMod:cMod});
+                var rd=ang*Math.PI/180, lst=pts[pts.length-1];
+                pts.push({x:lst.x+ln*Math.cos(rd), y:lst.y+ln*Math.sin(rd)});
+                if(hasC) ang+=parseFloat(els[i].querySelector('.lv-angle').value)||0;
+            }
+            if(pts.length<2) return;
+            var sc = getScale(pts, w, h);
+            cx.beginPath(); cx.strokeStyle='#27ae60'; cx.lineWidth=4;
+            pts.forEach(function(p,i){ var s=toScr(p,pts,w,h,sc); if(i===0) cx.moveTo(s.x,s.y); else cx.lineTo(s.x,s.y); });
+            cx.stroke();
+            var sol = solveLv(tData);
+            document.getElementById('bom-display').innerText = "SZH: "+sol.szh+" | Extras: "+sol.ext;
+            
+            var mMap={}, mArr=Array.from(mSet).sort(); mArr.forEach(function(m,i){ mMap[m]=3+i; });
+            cx.font="bold 20px Arial"; cx.textAlign="center"; cx.textBaseline="middle";
+            pts.forEach(function(p,i){
+                var s=toScr(p,pts,w,h,sc);
+                if(i===0 || i===pts.length-1) { cx.fillStyle='red'; cx.beginPath(); cx.arc(s.x,s.y,8,0,2*Math.PI); cx.fill(); cx.fillStyle='orange'; cx.fillText("1",s.x+15,s.y-15); }
+                else {
+                    var prev=tData[i-1];
+                    if(prev.hasC) { cx.fillStyle='orange'; cx.fillRect(s.x-8,s.y-8,16,16); cx.fillStyle='white'; cx.font="bold 12px Arial"; cx.fillText(mMap[prev.cMod],s.x,s.y); cx.font="bold 20px Arial"; }
+                    else { cx.fillStyle='red'; cx.beginPath(); cx.arc(s.x,s.y,5,0,2*Math.PI); cx.fill(); }
+                }
+            });
+            // Intermediates
+            var cAng = tData.length ? tData[0].ang : 0;
+            tData.forEach(function(t,i){
+                var pS=pts[i], r=cAng*Math.PI/180;
+                sol.segs[i].forEach(function(post){
+                    var sx=pS.x+post.p*Math.cos(r), sy=pS.y+post.p*Math.sin(r);
+                    var s=toScr({x:sx,y:sy},pts,w,h,sc);
+                    if(post.t==='m'){ cx.fillStyle='orange'; cx.fillRect(s.x-6,s.y-6,12,12); cx.fillStyle='orange'; cx.fillText(mMap[post.ref], s.x+15, s.y-15); }
+                    else { cx.fillStyle='#2ecc71'; cx.beginPath(); cx.arc(s.x,s.y,5,0,2*Math.PI); cx.fill(); cx.fillStyle='orange'; cx.fillText("2", s.x+15, s.y-15); }
+                });
+                if(i<tData.length-1) cAng = tData[i+1].ang;
+            });
+            var sup = document.getElementById('lv-support-type').value==='poste' ? document.getElementById('lv-post-model').value : "Chapa Sand02";
+            var v = document.getElementById('lv-variant').value, eb=document.getElementById('lv-eb-model').value;
+            bom['1'] = v==='Ends50' ? (sup+" + Ends50") : (sup+" + Ends10 + "+eb);
+            bom['2'] = sup+" + "+document.getElementById('lv-szh-model').value;
+            for(var k in mMap) bom[mMap[k]] = sup+" + "+k;
+            renderBOM(bom);
+        }
+    }
+
+    function getScale(pts,w,h) {
+        var xs=pts.map(function(p){return p.x}), ys=pts.map(function(p){return p.y});
+        var rx=Math.max.apply(null,xs)-Math.min.apply(null,xs)||1, ry=Math.max.apply(null,ys)-Math.min.apply(null,ys)||1;
+        return Math.min((w-100)/rx, (h-100)/ry) || 20;
+    }
+    function toScr(p,pts,w,h,sc) {
+        var xs=pts.map(function(pt){return pt.x}), ys=pts.map(function(pt){return pt.y});
+        var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
+        var minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
+        return { x: 50+(p.x-minX)*sc+(w-100-(maxX-minX)*sc)/2, y: h-(50+(p.y-minY)*sc+(h-100-(maxY-minY)*sc)/2) };
+    }
+    function solveBar(tData) {
+        var tot=0, lay=[];
+        for(var i=0;i<tData.length;i++){
+            var s=i===0?0.35:0.4, e=i===tData.length-1?0.35:0.4, len=tData[i].len;
+            var p=[s], c=len-s-e;
+            if(c>0){ var n=Math.ceil(c/2.5), st=c/n; for(var k=1;k<n;k++) p.push(s+st*k); }
+            if(Math.abs((len-e)-s)>0.01) p.push(len-e);
+            lay.push(p); tot+=p.length;
+        }
+        return {posts:lay, count:tot};
+    }
+    function solveLv(tData) {
+        var sup=document.getElementById('lv-support-type').value, th=parseFloat(document.getElementById('lv-chapa-thick').value)||0.5;
+        var maxD = (sup==='sand02' && th>0.63) ? 12 : 10;
+        var sz=0, ex=0, res=[];
+        tData.forEach(function(t){
+            if(t.len<=0){res.push([]); return;}
+            var ms = t.mans.map(function(m){return {d:parseFloat(m.d), t:m.type}}).filter(function(m){return m.d>0 && m.d<t.len}).sort(function(a,b){return a.d-b.d});
+            var nodes=[0]; ms.forEach(function(m){nodes.push(m.d)}); nodes.push(t.len);
+            var pos=[];
+            for(var i=0; i<nodes.length-1; i++){
+                var st=nodes[i], en=nodes[i+1], sp=en-st;
+                if(i>0) { pos.push({p:st, type:'m', ref:ms[i-1].t}); ex++; }
+                if(sp>0){
+                    var n=Math.ceil(sp/maxD), d=sp/n;
+                    for(var k=1; k<n; k++) { pos.push({p:st+d*k, type:'a', ref:'SZH'}); sz++; }
+                }
+            }
+            res.push(pos);
+        });
+        return {segs:res, szh:sz, ext:ex};
+    }
+    function renderBOM(b) {
+        var tb=document.getElementById('bom-table-body'); tb.innerHTML='';
+        Object.keys(b).sort(function(x,y){return x-y}).forEach(function(k){
+            tb.insertAdjacentHTML('beforeend', '<tr><td><span class="bom-badge">'+k+'</span></td><td>Tipo '+k+'</td><td>'+b[k]+'</td></tr>');
+        });
+    }
+
+    // === PHOTO & EDITOR (PRECISION FIX) ===
+    var canvas = document.getElementById('editor'), ctx = canvas.getContext('2d');
+    var sX, sY, snap;
+
+    function loadPhoto(e){
+        if(e.target.files[0]){
+            var r=new FileReader();
+            r.onload=function(ev){
+                img.onload=function(){ var s=Math.min(800/img.width,1); canvas.width=img.width*s; canvas.height=img.height*s; renderEditor(); };
+                img.src=ev.target.result;
+            };
+            r.readAsDataURL(e.target.files[0]);
+        }
+    }
+    function importPlan(){
+        if(!img.src) return alert("Carga foto primero");
+        var pc=document.getElementById('geo-canvas');
+        ov.img=new Image(); ov.img.src=pc.toDataURL();
+        ov.img.onload=function(){ ov.on=true; ov.s=1; ov.x=(canvas.width-ov.img.width)/2; ov.y=(canvas.height-ov.img.height)/2; document.getElementById('overlay-controls').style.display='block'; renderEditor(); }
+    }
+    function fixOverlay(){ ov.on=false; document.getElementById('overlay-controls').style.display='none'; var t=document.createElement('canvas'); t.width=canvas.width; t.height=canvas.height; t.getContext('2d').drawImage(canvas,0,0); img.src=t.toDataURL(); }
+    function renderEditor(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        if(img.src) ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        if(ov.on && ov.img){ var s=parseFloat(document.getElementById('overlay-scale').value); ov.s=s; ctx.drawImage(ov.img, ov.x, ov.y, ov.img.width*s, ov.img.height*s); }
+    }
+
+    // --- MOUSE/TOUCH LOGIC CORREGIDA ---
+    function getPos(e) {
+        var rect = canvas.getBoundingClientRect();
+        var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        // Escalar la posición del ratón al tamaño real del canvas (resolución vs display)
+        return {
+            x: (clientX - rect.left) * (canvas.width / rect.width),
+            y: (clientY - rect.top) * (canvas.height / rect.height)
+        };
+    }
+
+    function start(e) {
+        var p = getPos(e); sX = p.x; sY = p.y;
+        if(ov.on) { ov.drag=true; sX -= ov.x; sY -= ov.y; }
+        else { isDrawing=true; ctx.beginPath(); snap = ctx.getImageData(0,0,canvas.width,canvas.height); }
+    }
+    function move(e) {
+        e.preventDefault();
+        var p = getPos(e);
+        if(ov.on && ov.drag) { ov.x = p.x - sX; ov.y = p.y - sY; renderEditor(); }
+        else if(isDrawing) {
+            ctx.putImageData(snap,0,0);
+            ctx.lineWidth=5; ctx.strokeStyle="red"; ctx.lineCap="round";
+            ctx.beginPath(); ctx.moveTo(sX,sY); ctx.lineTo(p.x, p.y); ctx.stroke();
+        }
+    }
+    function end() { isDrawing=false; ov.drag=false; }
+
+    canvas.addEventListener('mousedown', start); canvas.addEventListener('touchstart', start);
+    canvas.addEventListener('mousemove', move); canvas.addEventListener('touchmove', move);
+    canvas.addEventListener('mouseup', end); canvas.addEventListener('touchend', end);
+
+    function clearDraw(){ img.src=img.src; setTimeout(renderEditor,50); }
+    function savePhoto(){
+        if(!canvas.width) return;
+        savedPhotos.push(canvas.toDataURL('image/jpeg',0.6));
+        var i=document.createElement('img'); i.src=savedPhotos[savedPhotos.length-1]; i.className='thumb';
+        document.getElementById('gallery-grid').appendChild(i);
+        document.getElementById('photo-count').innerText=savedPhotos.length;
+    }
+
+    // === EXPORT ===
+    function exportJSON() {
+        var d = {
+            layoutType: 'Recto/Curvas', calculated: false,
+            layoutData: { longitud:0, isClosedLoop:document.getElementById('lv-loop')?.checked||false, direccionInicial:0, curvas:[], branches:[], puntosFijos:[], shock11_qty:parseInt(document.getElementById('lv-shock-qty')?.value)||0 },
+            quoteConfig: { clientIndex:0, offerNumber:"2152/25", date:document.getElementById('g-date').value },
+            uiParams: { linea_tipo:document.getElementById('lv-variant').value, espesor:document.getElementById('lv-chapa-thick').value, eb_tipo:document.getElementById('lv-eb-model').value, szh_tipo:document.getElementById('lv-szh-model').value, ends50_config:'mixed' }
+        };
+        if(sys==='linea_vida'){
+            var tot=0, els=document.querySelectorAll('.lv-tramo');
+            for(var i=0; i<els.length; i++){
+                var ln=parseFloat(els[i].querySelector('.lv-len').value)||0; tot+=ln;
+                if(i===0) d.layoutData.direccionInicial=parseFloat(els[i].querySelector('.lv-start-angle').value)||0;
+                var st=tot-ln, mrs=els[i].querySelectorAll('.manual-point-row');
+                for(var k=0; k<mrs.length; k++) d.layoutData.puntosFijos.push({id:Date.now()+Math.random(), posicion:parseFloat((st+parseFloat(mrs[k].querySelector('.mp-dist').value)).toFixed(2))});
+                if(els[i].querySelector('.lv-end').value==='curva') d.layoutData.curvas.push({id:Date.now()+i, posicion:parseFloat(tot.toFixed(2)), angulo:parseFloat(els[i].querySelector('.lv-angle').value)||0, tipo:els[i].querySelector('.lv-curve-type').value, unidades:1});
+            }
+            d.layoutData.longitud=tot;
+        } else { d.tecnico = {type:'barandilla'}; }
+        var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'})); a.download='Instalacion_'+d.quoteConfig.date+'.json';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    addBarandillaTramo(); addLvTramo(); toggleLvConfig();
+});
+</script>
+</body>
+</html>

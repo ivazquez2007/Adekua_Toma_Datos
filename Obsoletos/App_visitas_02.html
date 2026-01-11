@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 Toma de Datos - Instalaciones</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f4f4f9; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        h1 { color: var(--primary); font-size: 1.5rem; text-align: center; margin-bottom: 20px; }
+        h2 { font-size: 1.1rem; color: var(--accent); border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 25px; }
+        
+        .selector-type { display: flex; gap: 10px; margin-bottom: 20px; }
+        .type-btn { flex: 1; padding: 15px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-weight: bold; text-align: center; }
+        .type-btn.active { border-color: var(--accent); background: #ebf5fb; color: var(--accent); }
+        
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 0.9rem; color: #555; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        
+        .hidden { display: none; }
+        
+        .tramo-card { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; margin-top: 10px; border-radius: 8px; position: relative; }
+        .remove-btn { position: absolute; top: 5px; right: 5px; color: red; cursor: pointer; font-weight: bold; background: none; border: none; font-size: 1.2rem; }
+        
+        .action-btn { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 30px; }
+        .add-btn { background: #2ecc71; margin-top: 10px; padding: 10px; font-size: 0.9rem; }
+        
+        /* Estilos específicos para visualizar inputs condicionales */
+        .conditional-input { background-color: #fff3cd; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📋 Toma de Datos en Obra</h1>
+    
+    <div class="selector-type">
+        <div class="type-btn active" onclick="setAppMode('barandilla')" id="btn-barandilla">Barandilla</div>
+        <div class="type-btn" onclick="setAppMode('linea_vida')" id="btn-lv">Línea de Vida</div>
+    </div>
+
+    <div id="common-fields">
+        <label>Nombre del Proyecto / Cliente</label>
+        <input type="text" id="project-name" placeholder="Ej: Nave Industrial Getafe">
+        <label>Fecha</label>
+        <input type="date" id="project-date">
+    </div>
+
+    <div id="form-barandilla">
+        <h2>Configuración Barandilla</h2>
+        
+        <label>Tipo de Instalación</label>
+        <select id="b-install-type">
+            <option value="contrapeso">Autoportante (Contrapeso)</option>
+            <option value="metalica">Sobre Metal</option>
+            <option value="hormigon">Sobre Hormigón</option>
+        </select>
+
+        <label>Normativa</label>
+        <select id="b-normativa">
+            <option value="din_13374">EN 13374 (Clase A) - Postes a 2.5m</option>
+            <option value="din_14122">EN 14122-3 - Postes a 1.5m</option>
+        </select>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label>Inicio</label>
+                <select id="b-start-type">
+                    <option value="libre">Libre</option>
+                    <option value="pared">Pared</option>
+                </select>
+            </div>
+            <div>
+                <label>Final</label>
+                <select id="b-end-type">
+                    <option value="libre">Libre</option>
+                    <option value="pared">Pared</option>
+                </select>
+            </div>
+        </div>
+
+        <label>Lado de Protección</label>
+        <select id="b-side">
+            <option value="derecha">Derecha (Interior a der.)</option>
+            <option value="izquierda">Izquierda (Interior a izq.)</option>
+        </select>
+
+        <h2>Geometría (Tramos)</h2>
+        <div id="b-tramos-container"></div>
+        <button class="action-btn add-btn" onclick="addBarandillaTramo()">+ Añadir Tramo Recto</button>
+    </div>
+
+    <div id="form-lv" class="hidden">
+        <h2>Configuración Línea de Vida</h2>
+        
+        <label>Tipo de Soporte</label>
+        <select id="lv-soporte-type" onchange="toggleLvFields()">
+            <option value="sand02">Chapa Sandwich / Deck (SAND-02)</option>
+            <option value="poste">Poste Estructural (Hormigón/Metal)</option>
+        </select>
+
+        <div id="lv-fields-poste" class="hidden">
+            <label>Tipo de Poste Base</label>
+            <select id="lv-poste-base">
+                <option value="STA-30-300">STA-30-300 (30cm)</option>
+                <option value="STA-30-400">STA-30-400 (40cm)</option>
+                <option value="STA-30-500">STA-30-500 (50cm)</option>
+                <option value="STA-30-600">STA-30-600 (60cm)</option>
+                <option value="STA-30-700">STA-30-700 (70cm)</option>
+            </select>
+            <label>Distancia Máx. entre Soportes (m)</label>
+            <input type="number" id="lv-dist-max" value="10" step="0.5">
+        </div>
+
+        <div id="lv-fields-sand">
+            <label>Espesor Chapa / Distancia Correas</label>
+            <select id="lv-espesor">
+                <option value="0.5">Chapa standard (Soporte cada 10m)</option>
+                <option value="0.6">Chapa espesor >0.63 (Soporte cada 12m)</option>
+            </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label>Tipo Línea</label>
+                <select id="lv-linea-tipo">
+                    <option value="Ends50">Ends 50 (Tensor)</option>
+                    <option value="Ends10">Ends 10 (Standard)</option>
+                </select>
+            </div>
+            <div>
+                <label>Absorbedores Extra</label>
+                <input type="number" id="lv-shocks" value="0">
+            </div>
+        </div>
+
+        <label><input type="checkbox" id="lv-closed"> Línea Cerrada (Anillo)</label>
+
+        <h2>Constructor de Tramos</h2>
+        <p style="font-size: 0.8rem; color: #666;">Añade tramos rectos. Si hay una curva entre ellos, selecciona el ángulo al final del tramo.</p>
+        <div id="lv-tramos-container"></div>
+        <button class="action-btn add-btn" onclick="addLvTramo()">+ Añadir Tramo</button>
+        
+        <h3>Resumen Geometría:</h3>
+        <div id="lv-geo-summary" style="font-family: monospace; background: #eee; padding: 10px;">0.00 m</div>
+    </div>
+
+    <button class="action-btn" onclick="exportJSON()">💾 Descargar JSON para Oficina</button>
+
+</div>
+
+<script>
+    // --- ESTADO GLOBAL ---
+    let currentMode = 'barandilla';
+    
+    // Inicialización
+    document.getElementById('project-date').valueAsDate = new Date();
+    addBarandillaTramo(); // Un tramo por defecto
+    addLvTramo(); // Un tramo por defecto
+
+    // --- LÓGICA UI ---
+    function setAppMode(mode) {
+        currentMode = mode;
+        document.getElementById('btn-barandilla').className = mode === 'barandilla' ? 'type-btn active' : 'type-btn';
+        document.getElementById('btn-lv').className = mode === 'linea_vida' ? 'type-btn active' : 'type-btn';
+        
+        if (mode === 'barandilla') {
+            document.getElementById('form-barandilla').classList.remove('hidden');
+            document.getElementById('form-lv').classList.add('hidden');
+        } else {
+            document.getElementById('form-barandilla').classList.add('hidden');
+            document.getElementById('form-lv').classList.remove('hidden');
+            toggleLvFields();
+        }
+    }
+
+    function toggleLvFields() {
+        const type = document.getElementById('lv-soporte-type').value;
+        if (type === 'poste') {
+            document.getElementById('lv-fields-poste').classList.remove('hidden');
+            document.getElementById('lv-fields-sand').classList.add('hidden');
+        } else {
+            document.getElementById('lv-fields-poste').classList.add('hidden');
+            document.getElementById('lv-fields-sand').classList.remove('hidden');
+        }
+    }
+
+    // --- LÓGICA BARANDILLA ---
+    function addBarandillaTramo() {
+        const container = document.getElementById('b-tramos-container');
+        const idx = container.children.length;
+        
+        // Si no es el primero, añadimos selector de esquina anterior
+        let cornerHtml = '';
+        if (idx > 0) {
+            cornerHtml = `
+                <div style="background: #eaf2f8; padding: 10px; margin-bottom: 5px; border-radius: 4px;">
+                    <label style="margin:0">Esquina Anterior (Unión con Tramo ${idx})</label>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <select class="b-corner-type">
+                            <option value="Esquina cerrada">Esquina Estándar</option>
+                            <option value="Articulada">Articulada</option>
+                        </select>
+                        <input type="number" class="b-corner-angle" placeholder="Ángulo (90)" value="90">
+                    </div>
+                </div>
+            `;
+        }
+
+        const html = `
+            <div class="tramo-card b-tramo">
+                ${idx > 0 ? '<button class="remove-btn" onclick="this.parentElement.remove()">×</button>' : ''}
+                <strong>Tramo ${idx + 1}</strong>
+                ${cornerHtml}
+                <div style="display: grid; grid-template-columns: 1fr 100px; gap: 10px;">
+                    <div>
+                        <label>Longitud (m)</label>
+                        <input type="number" class="b-length" step="0.1" placeholder="Ej: 5.5">
+                    </div>
+                    <div style="text-align:center">
+                        <label>Rodapié</label>
+                        <input type="checkbox" class="b-rodapie" style="width: 20px; height: 20px;">
+                    </div>
+                </div>
+                <label>Postes Fijos (separados por coma)</label>
+                <input type="text" class="b-fixed" placeholder="Ej: 1.5, 4.0">
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    // --- LÓGICA LÍNEA DE VIDA (CONSTRUCTOR GEOMETRÍA) ---
+    function addLvTramo() {
+        const container = document.getElementById('lv-tramos-container');
+        const idx = container.children.length;
+        
+        const html = `
+            <div class="tramo-card lv-tramo" oninput="calcLvGeo()">
+                ${idx > 0 ? '<button class="remove-btn" onclick="this.parentElement.remove(); calcLvGeo()">×</button>' : ''}
+                <strong>Tramo ${idx + 1}</strong>
+                <label>Longitud Recta (m)</label>
+                <input type="number" class="lv-length" step="0.1" value="0">
+                
+                <div class="lv-corner-opt">
+                    <label>Al final de este tramo hay:</label>
+                    <select class="lv-end-action">
+                        <option value="none">Nada (Fin de línea)</option>
+                        <option value="curve">Una Curva</option>
+                    </select>
+                </div>
+                
+                <div class="lv-curve-details hidden">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+                        <div>
+                            <label>Ángulo (º)</label>
+                            <input type="number" class="lv-angle" value="90">
+                        </div>
+                        <div>
+                            <label>Tipo Curva</label>
+                            <select class="lv-curve-type">
+                                <option value="AIO-EDLE-19">Tubo Flexible (EDLE)</option>
+                                <option value="Rígida">Tubo Rígido</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+        
+        // Listener para mostrar/ocultar opciones de curva
+        const newCard = container.lastElementChild;
+        const select = newCard.querySelector('.lv-end-action');
+        select.addEventListener('change', (e) => {
+            const details = newCard.querySelector('.lv-curve-details');
+            if(e.target.value === 'curve') details.classList.remove('hidden');
+            else details.classList.add('hidden');
+            calcLvGeo();
+        });
+    }
+
+    function calcLvGeo() {
+        // Esta función recalcula la geometría para mostrar un resumen en vivo
+        let totalLen = 0;
+        let summary = [];
+        document.querySelectorAll('.lv-tramo').forEach((card, i) => {
+            const len = parseFloat(card.querySelector('.lv-length').value) || 0;
+            totalLen += len;
+            const hasCurve = card.querySelector('.lv-end-action').value === 'curve';
+            if(hasCurve) {
+                const ang = card.querySelector('.lv-angle').value;
+                summary.push(`T${i+1}(${len}m) -> Curva(${ang}º)`);
+            } else {
+                summary.push(`T${i+1}(${len}m)`);
+            }
+        });
+        document.getElementById('lv-geo-summary').innerText = `Longitud Total: ${totalLen.toFixed(2)}m\nSecuencia: ${summary.join(' - ')}`;
+        return totalLen;
+    }
+
+    // --- EXPORTACIÓN ---
+    function exportJSON() {
+        const projectName = document.getElementById('project-name').value || "Instalacion";
+        let data = {};
+
+        if (currentMode === 'barandilla') {
+            // Estructura compatible con app.js
+            const lengths = [];
+            const toeBoards = [];
+            const fixedPosts = {};
+            const esquinas = [];
+            const angles = [];
+            
+            document.querySelectorAll('.b-tramo').forEach((card, i) => {
+                lengths.push(parseFloat(card.querySelector('.b-length').value) || 0);
+                toeBoards.push(card.querySelector('.b-rodapie').checked);
+                
+                const fixedVal = card.querySelector('.b-fixed').value;
+                if(fixedVal) fixedPosts[i] = fixedVal.split(',').map(n => parseFloat(n));
+
+                // Esquinas (están en la tarjeta del tramo siguiente, excepto el primero)
+                if (i > 0) { // Si hay tramo 2, hay esquina 1
+                    esquinas.push(card.querySelector('.b-corner-type').value);
+                    angles.push(parseFloat(card.querySelector('.b-corner-angle').value) || 90);
+                }
+            });
+
+            // Corrección de signo para "side" como hace la app original
+            const sideVal = document.getElementById('b-side').value;
+            const sideSign = sideVal === 'izquierda' ? -1 : 1;
+
+            data = {
+                parameters: {
+                    installType: document.getElementById('b-install-type').value,
+                    normativa: document.getElementById('b-normativa').value, // 'din_13374' o 'din_14122'
+                    maxStep: document.getElementById('b-normativa').value === 'din_14122' ? 1.5 : 2.5,
+                    startType: document.getElementById('b-start-type').value,
+                    endType: document.getElementById('b-end-type').value,
+                    side: sideVal,
+                    sideSign: sideSign,
+                    dir0: 0, // Por defecto
+                    lengths: lengths,
+                    toeBoards: toeBoards,
+                    fixedPosts: fixedPosts,
+                    esquinas: esquinas,
+                    angles: angles,
+                    cotaPositions: lengths.map(() => 'auto') // Por defecto
+                }
+            };
+
+        } else {
+            // Estructura compatible con calculations.js / calculations_postes.js
+            const soporteType = document.getElementById('lv-soporte-type').value;
+            
+            // Reconstruir geometría absoluta
+            let currentPos = 0;
+            let curvasList = [];
+            
+            document.querySelectorAll('.lv-tramo').forEach((card) => {
+                const len = parseFloat(card.querySelector('.lv-length').value) || 0;
+                const hasCurve = card.querySelector('.lv-end-action').value === 'curve';
+                
+                currentPos += len;
+                
+                if (hasCurve) {
+                    curvasList.push({
+                        posicion: parseFloat(currentPos.toFixed(3)),
+                        tipo: card.querySelector('.lv-curve-type').value,
+                        angulo: parseFloat(card.querySelector('.lv-angle').value) || 90,
+                        unidades: 1
+                    });
+                }
+            });
+
+            const totalLen = currentPos;
+            const shockQty = parseInt(document.getElementById('lv-shocks').value) || 0;
+
+            const layoutData = {
+                longitud: totalLen,
+                isClosedLoop: document.getElementById('lv-closed').checked,
+                direccionInicial: 0,
+                curvas: curvasList,
+                branches: [], // MVP sin ramales complejos
+                puntosFijos: [],
+                puntosAnclajeExtra: [],
+                aioStopPositions: []
+            };
+
+            // Estructura combinada que sirve tanto para Sand02 como Postes
+            data = {
+                layoutType: curvasList.length > 0 ? 'Recto/Curvas' : 'Recto',
+                layoutData: layoutData,
+                // Parámetros específicos inyectados en el JSON para carga automática
+                parameters: {
+                    linea_tipo: document.getElementById('lv-linea-tipo').value,
+                    szh_tipo: 'AIO-SZH-10', // Default
+                    eb_tipo: 'AIO-EB-10',   // Default
+                    shock11_cantidad: shockQty
+                }
+            };
+
+            // Diferencias específicas
+            if (soporteType === 'sand02') {
+                data.parameters.espesor = document.getElementById('lv-espesor').value;
+                data.parameters.usar_alza = false; 
+            } else {
+                data.parameters.usar_postes = true;
+                data.parameters.poste_tipo = document.getElementById('lv-poste-base').value;
+                data.parameters.distancia_maxima = document.getElementById('lv-dist-max').value;
+                data.parameters.usar_fijacion_especial = false;
+            }
+        }
+
+        // Descarga
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectName.replace(/\s+/g, '_')}_${currentMode}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+</script>
+
+</body>
+</html>

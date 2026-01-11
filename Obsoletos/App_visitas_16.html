@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 Toma de Datos v15 (Full Compatible)</title>
+    <style>
+        :root { --primary: #0056b3; --accent: #e67e22; --bg: #f4f6f8; --success: #27ae60; --danger: #c0392b; --purple: #6f42c1; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0 0 90px 0; }
+        
+        /* HEADER & TABS */
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-tabs { display: flex; background: white; border-bottom: 1px solid #ddd; position: sticky; top: 50px; z-index: 90; overflow-x: auto; }
+        .tab-btn { flex: 1; padding: 15px 10px; border: none; background: none; font-weight: 600; color: #7f8c8d; cursor: pointer; border-bottom: 4px solid transparent; white-space: nowrap; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: #f8f9fa; }
+        
+        /* LAYOUT */
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+        .section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #e1e4e8; }
+        h2 { font-size: 1rem; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 10px; margin: 0 0 15px 0; }
+        h3 { font-size: 0.9rem; color: #555; margin-bottom: 5px; font-weight: 600; }
+        
+        /* FORMS */
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 0.85rem; color: #34495e; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+        .check-group { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f1f1; }
+        .check-group input { width: 20px; height: 20px; margin-right: 10px; }
+        
+        /* BUTTONS */
+        .btn-full { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; text-align: center; }
+        .btn-add { background: var(--success); color: white; }
+        .btn-mini { padding: 5px 10px; font-size: 0.8rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; }
+        .btn-save { background: var(--primary); color: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        .btn-overlay { background: var(--purple); color: white; }
+        .remove-btn { position: absolute; top: 10px; right: 10px; color: var(--danger); background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+        /* SYSTEM SELECTOR */
+        .sys-selector { display: flex; gap: 10px; }
+        .sys-btn { flex: 1; padding: 15px; border: 2px solid #dfe6e9; border-radius: 8px; background: white; font-weight: bold; cursor: pointer; text-align: center; transition: 0.2s; }
+        .sys-btn.active { border-color: var(--primary); background: #ebf5fb; color: var(--primary); }
+
+        /* CANVAS & BOM */
+        #geo-preview-container { width: 100%; height: 350px; background: #2c3e50; border-radius: 8px; margin-bottom: 15px; position: sticky; top: 110px; z-index: 80; display: flex; justify-content: center; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.3); }
+        .preview-label { position: absolute; top: 10px; left: 10px; color: white; font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px; pointer-events: none; }
+        .bom-overlay { position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; color: #333; }
+        
+        #bom-table-container { margin-bottom: 20px; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; overflow: hidden; }
+        .bom-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .bom-table th { background: #f8f9fa; text-align: left; padding: 10px; border-bottom: 2px solid #ddd; }
+        .bom-table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .bom-badge { display: inline-block; width: 20px; height: 20px; background: var(--accent); color: white; border-radius: 50%; text-align: center; line-height: 20px; font-size: 0.8rem; margin-right: 5px; }
+
+        /* UTILS */
+        .hidden { display: none !important; }
+        .conditional-box { background-color: #fff8e1; border: 1px solid #ffe0b2; padding: 15px; border-radius: 6px; margin-top: 10px; }
+        .tramo-card { background: #fdfdfd; border-left: 4px solid var(--accent); padding: 15px; margin-bottom: 10px; position: relative; border-radius: 4px; border: 1px solid #eee; }
+        .config-card { border-left: 4px solid var(--primary); background: #eef2f5; }
+        .manual-point-row { display: flex; gap: 5px; margin-top: 5px; align-items: center; background: #fff; border: 1px solid #ddd; padding: 5px; border-radius: 4px; }
+        
+        /* FOTOS */
+        #canvas-container { position: relative; width: 100%; height: 300px; border: 2px dashed #ccc; margin: 10px 0; background: #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 15px; }
+        .thumb { width: 100%; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
+        .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px; background: white; border-top: 1px solid #ddd; z-index: 999; }
+    </style>
+</head>
+<body>
+
+<header><h1>📐 Toma de Datos v15</h1></header>
+
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-general')">1. General</button>
+    <button class="tab-btn" onclick="switchTab('tab-tecnico')">2. Soportes</button>
+    <button class="tab-btn" onclick="switchTab('tab-geometria')">3. Plano (Auto)</button>
+    <button class="tab-btn" onclick="switchTab('tab-fotos')">4. Fotos</button>
+</div>
+
+<div class="container">
+    <div id="tab-general" class="section active">
+        <div class="card">
+            <h2>Datos del Proyecto</h2>
+            <label>Cliente</label><input type="text" id="g-client">
+            <label>Obra</label><input type="text" id="g-site">
+            <label>Fecha</label><input type="date" id="g-date">
+        </div>
+        <div class="card">
+            <h2>Sistema</h2>
+            <div class="sys-selector">
+                <div class="sys-btn active" id="btn-barandilla" onclick="setSystem('barandilla')">🛡️ Barandilla</div>
+                <div class="sys-btn" id="btn-linea" onclick="setSystem('linea_vida')">⚓ Línea de Vida</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-tecnico" class="section">
+        <div id="tech-barandilla">
+            <div class="card">
+                <h2>Fijación Barandilla</h2>
+                <select id="b-fix-type" onchange="toggleBarandillaOpts()">
+                    <option value="contrapeso">Autoportante (Contrapeso)</option>
+                    <option value="metalica">Fijación a Metal</option>
+                    <option value="hormigon">Fijación a Hormigón</option>
+                </select>
+                <div id="opts-b-contrapeso" class="conditional-box">
+                    <label>Superficie</label><select id="b-surface"><option value="grava">Grava</option><option value="asfaltica">Asfáltica</option><option value="pvc">PVC/TPO</option></select>
+                </div>
+            </div>
+        </div>
+
+        <div id="tech-linea" class="hidden">
+            <div class="card config-card">
+                <h2>Componentes (BOM)</h2>
+                <label>Variante</label><select id="lv-variant" onchange="toggleLvConfig(); drawPreview();"><option value="Ends10">Ends10</option><option value="Ends50">Ends50</option></select>
+                <div id="group-ends10">
+                    <label>Extremo (EB)</label><select id="lv-eb-model" onchange="drawPreview()"></select>
+                    <div class="check-group"><input type="checkbox" id="chk-shock" onchange="toggleShockOpts()"><label>Lleva Absorbedores</label></div>
+                    <div id="opts-shock" class="hidden"><label>Cant.</label><input type="number" id="lv-shock-qty" value="0"></div>
+                </div>
+                <label>Intermedio (SZH)</label><select id="lv-szh-model" onchange="drawPreview()"></select>
+            </div>
+            <div class="card">
+                <h2>Soporte</h2>
+                <select id="lv-support-type" onchange="toggleLvOpts(); drawPreview();"><option value="sand02">Chapa (Sandwich/Deck)</option><option value="poste">Poste Estructural</option></select>
+                <div id="opts-lv-chapa" class="conditional-box">
+                    <label>Espesor</label><select id="lv-chapa-thick" onchange="drawPreview()"><option value="0.5">0.5 mm</option><option value="0.6">0.6 mm</option><option value="0.7">0.7 mm</option></select>
+                </div>
+                <div id="opts-lv-poste" class="conditional-box hidden">
+                    <label>Modelo</label><select id="lv-post-model" onchange="drawPreview()"></select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-geometria" class="section">
+        <div id="geo-preview-container">
+            <div class="preview-label">👁️ Plano de Instalación</div>
+            <canvas id="geo-canvas" width="600" height="350"></canvas>
+            <div class="bom-overlay" id="bom-display">Items: 0</div>
+        </div>
+        <div id="bom-table-container">
+            <table class="bom-table">
+                <thead><tr><th style="width:40px">#</th><th>Tipo</th><th>Montaje</th></tr></thead>
+                <tbody id="bom-table-body"></tbody>
+            </table>
+        </div>
+        <div id="geo-barandilla">
+            <div class="card config-card">
+                <h3>Terminaciones</h3>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+                    <div><label>Inicio</label><select id="b-start-conf" onchange="drawPreview()"><option value="R41">R41</option><option value="R91">R91</option><option value="R51">R51</option></select></div>
+                    <div><label>Fin</label><select id="b-end-conf" onchange="drawPreview()"><option value="R41">R41</option><option value="R91">R91</option><option value="R51">R51</option></select></div>
+                </div>
+            </div>
+            <div id="b-tramos-list"></div>
+            <button class="btn-full btn-add" onclick="addBarandillaTramo()">+ Añadir Tramo</button>
+        </div>
+        <div id="geo-linea" class="hidden">
+            <div class="card" style="background:#e3f2fd; padding:10px;"><div class="check-group"><input type="checkbox" id="lv-loop" onchange="drawPreview()"><label>Anillo Cerrado</label></div></div>
+            <div id="lv-tramos-list"></div>
+            <button class="btn-full btn-add" onclick="addLvTramo()">+ Añadir Segmento</button>
+        </div>
+    </div>
+
+    <div id="tab-fotos" class="section">
+        <div class="card" style="text-align: center;">
+            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="loadPhoto(event)">
+            <button class="btn-full" style="background:#555; color:white; margin-bottom:10px;" onclick="document.getElementById('cam-input').click()">📷 Tomar Foto</button>
+            <div id="canvas-container"><canvas id="editor"></canvas></div>
+            
+            <div id="overlay-controls" style="display:none; background:#f1f3f5; padding:10px; margin-bottom:10px; border:1px solid #ddd;">
+                <label style="margin:0; color:var(--purple);">🗺️ Ajustar Plano</label>
+                <div style="display:flex; gap:10px; align-items:center; justify-content:center;">
+                    <span>Escala:</span><input type="range" id="overlay-scale" min="0.1" max="3" step="0.1" value="1" oninput="renderEditor()">
+                    <button class="btn-mini" style="background:var(--success);" onclick="fixOverlay()">✅ Fijar</button>
+                </div>
+                <p style="font-size:0.7rem; color:#666; margin:5px 0;">Arrastra para mover el plano.</p>
+            </div>
+
+            <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="importPlanToPhoto()" class="btn-mini btn-overlay">🗺️ Superponer Plano</button>
+                <button onclick="enableDraw()" class="btn-mini">✏️ Pintar</button>
+                <button onclick="clearDraw()" class="btn-mini">↺ Limpiar</button>
+                <button onclick="savePhoto()" class="btn-mini btn-save">💾 Guardar</button>
+            </div>
+        </div>
+        <div class="card"><h3>Galería (<span id="photo-count">0</span>)</h3><div class="gallery" id="gallery-grid"></div></div>
+    </div>
+</div>
+
+<div class="footer-fixed"><button class="btn-full btn-save" onclick="exportJSON()">📤 Guardar para Cálculo</button></div>
+
+<script>
+    // --- DATOS MAESTROS ---
+    const STA_LIST = ['STA-10-400','STA-10-600','STA-10-800','STA-11-340','STA-16-500','STA-30-500'];
+    const EB_LIST = ['AIO-EB-10','AIO-EB-11','AIO-EB-12','AIO-EB-13','AIO-EB-15','AIO-EB-16','AIO-EB-17'];
+    const SZH_LIST = ['AIO-SZH-10','AIO-SZH-11','AIO-SZH-12','AIO-SZH-13','AIO-SZH-15','AIO-SZH-16','AIO-SZH-17'];
+    const EDLE_LIST = ['AIO-EDLE-10','AIO-EDLE-13','AIO-EDLE-15','AIO-EDLE-16','AIO-EDLE-17','AIO-EDLE-19','AIO-EDLE-50'];
+    const EXTRA_ELEMENTS = ['AIO-EDLE-19','AIO-SZH-10','POSTE-REFUERZO','OTRO'];
+
+    let currentSystem='barandilla', globalCalculatedPosts=[], savedPhotos=[], imgObj=new Image(), isDrawing=false;
+    let overlay = { img:null, x:0, y:0, scale:1.0, active:false, isDragging:false };
+    document.getElementById('g-date').valueAsDate = new Date();
+
+    function populateSelect(id,list){const s=document.getElementById(id);list.forEach(m=>{let o=document.createElement('option');o.value=m;o.text=m;s.appendChild(o)});}
+    populateSelect('lv-post-model', STA_LIST); populateSelect('lv-eb-model', EB_LIST); populateSelect('lv-szh-model', SZH_LIST);
+    function getEdleOptionsHTML(){return EDLE_LIST.map(e=>`<option value="${e}">${e}</option>`).join('');}
+    function getExtraElemOptions(){return EXTRA_ELEMENTS.map(e=>`<option value="${e}">${e}</option>`).join('');}
+
+    // --- UI ---
+    function switchTab(id){
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        const map={'tab-general':0,'tab-tecnico':1,'tab-geometria':2,'tab-fotos':3};
+        document.querySelectorAll('.tab-btn')[map[id]].classList.add('active');
+        if(id==='tab-geometria') setTimeout(drawPreview,100);
+    }
+    function setSystem(sys){
+        currentSystem=sys;
+        document.getElementById('btn-barandilla').classList.toggle('active', sys==='barandilla');
+        document.getElementById('btn-linea').classList.toggle('active', sys==='linea_vida');
+        document.getElementById('tech-barandilla').classList.toggle('hidden', sys!=='barandilla');
+        document.getElementById('tech-linea').classList.toggle('hidden', sys!=='linea_vida');
+        document.getElementById('geo-barandilla').classList.toggle('hidden', sys!=='barandilla');
+        document.getElementById('geo-linea').classList.toggle('hidden', sys!=='linea_vida');
+        drawPreview();
+    }
+    function toggleBarandillaOpts(){ document.getElementById('opts-b-contrapeso').classList.toggle('hidden', document.getElementById('b-fix-type').value!=='contrapeso'); }
+    function toggleLvOpts(){ 
+        const v = document.getElementById('lv-support-type').value;
+        document.getElementById('opts-lv-chapa').classList.toggle('hidden', v!=='sand02');
+        document.getElementById('opts-lv-poste').classList.toggle('hidden', v!=='poste');
+    }
+    function toggleLvConfig(){ document.getElementById('group-ends10').classList.toggle('hidden', document.getElementById('lv-variant').value==='Ends50'); }
+    function toggleShockOpts(){ document.getElementById('opts-shock').classList.toggle('hidden', !document.getElementById('chk-shock').checked); }
+
+    // --- GEOMETRIA ---
+    function addBarandillaTramo(){
+        const c=document.getElementById('b-tramos-list'), i=c.children.length+1;
+        const lbl = i===1 ? "Dirección Inicial (º)" : "Giro (º)";
+        const val = i===1 ? "0" : "90";
+        c.insertAdjacentHTML('beforeend', `<div class="tramo-card b-tramo"><button class="remove-btn" onclick="this.parentElement.remove(); drawPreview()">×</button><h3>Tramo ${i}</h3><div style="background:#eee;padding:5px;"><label>${lbl}</label><input type="number" class="b-angle" value="${val}" oninput="drawPreview()"></div><div style="display:grid;grid-template-columns:2fr 1fr;gap:10px"><div><label>Long(m)</label><input type="number" class="b-len" step="0.1" oninput="drawPreview()"></div><div><label>Rodapié</label><input type="checkbox" class="b-rodapie" style="margin-top:40px"></div></div></div>`);
+        drawPreview();
+    }
+    function addLvTramo(){
+        const c=document.getElementById('lv-tramos-list'), i=c.children.length+1;
+        const startH = i===1 ? `<div style="background:#e8f5e9;padding:5px;margin-bottom:5px;"><label>Orientación Inicial (º)</label><input type="number" class="lv-start-angle" value="0" oninput="drawPreview()"></div>` : '';
+        c.insertAdjacentHTML('beforeend', `<div class="tramo-card lv-tramo" oninput="drawPreview()"><button class="remove-btn" onclick="this.parentElement.remove(); drawPreview()">×</button><h3>Segmento ${i}</h3>${startH}<label>Longitud(m)</label><input type="number" class="lv-len" step="0.1" value="0"><div style="margin-top:10px;border-top:1px dashed #ccc;padding-top:5px;"><div class="manual-points-list"></div><button class="btn-mini" onclick="addManualPoint(this)">+ P.Manual</button></div><div style="margin-top:10px;padding:10px;background:#e3f2fd;"><label>Fin:</label><select class="lv-end" onchange="this.nextElementSibling.classList.toggle('hidden',this.value!=='curva');drawPreview()"><option value="nada">Recto/Fin</option><option value="curva">Curva</option></select><div class="hidden"><label>Giro(º)</label><input type="number" class="lv-angle" value="90"><label>Modelo</label><select class="lv-curve-type" onchange="drawPreview()">${getEdleOptionsHTML()}</select></div></div></div>`);
+        drawPreview();
+    }
+    function addManualPoint(btn){
+        btn.previousElementSibling.insertAdjacentHTML('beforeend', `<div class="manual-point-row"><input type="number" class="mp-dist" placeholder="Dist" style="width:60px;" oninput="drawPreview()"><select class="mp-type" onchange="drawPreview()">${getExtraElemOptions()}</select><button onclick="this.parentElement.remove();drawPreview()" style="color:red;border:none;font-weight:bold;">×</button></div>`);
+    }
+
+    // --- CALCULOS ---
+    function solveBarandillaPosts(tramos, sType, eType){
+        if(tramos.length===0) return {posts:[], count:0};
+        const getOff = t => (t==='R91'?0.35 : t==='R51'?0.5 : 2.5);
+        if(tramos.length===1) return calcSeg(tramos[0].len, getOff(sType), getOff(eType));
+        // Lógica simplificada esquinas:
+        let total=0, layout=[];
+        for(let t=0; t<tramos.length; t++){
+            let s = (t===0) ? getOff(sType) : 0.4; // Simplificado: entrada curva 0.4
+            let e = (t===tramos.length-1) ? getOff(eType) : 0.4; 
+            let r = calcSeg(tramos[t].len, s, e);
+            total += r.count; layout.push(r.positions);
+        }
+        return {posts:layout, count:total};
+    }
+    function calcSeg(len, s, e){
+        let p=[s], cover=len-s-e; 
+        if(cover>0){ const n=Math.ceil(cover/2.5); const st=cover/n; for(let k=1; k<n; k++) p.push(s+st*k); }
+        if(Math.abs((len-e)-s)>0.01) p.push(len-e);
+        return {positions:p, count:p.length};
+    }
+    function solveLvPosts(tramosData){
+        const supp=document.getElementById('lv-support-type').value;
+        const th=parseFloat(document.getElementById('lv-chapa-thick').value)||0.5;
+        let maxD = (supp==='sand02' && th>0.63) ? 12.0 : 10.0;
+        let cSZH=0, cExtra=0, segRes=[];
+        tramosData.forEach(t => {
+            if(t.len<=0){ segRes.push([]); return; }
+            let mans = t.manual.map(m=>({d:parseFloat(m.dist), t:m.type})).filter(m=>m.d>0 && m.d<t.len).sort((a,b)=>a.d-b.d);
+            let nodes=[0, ...mans.map(m=>m.d), t.len];
+            let pos=[];
+            for(let i=0; i<nodes.length-1; i++){
+                let start=nodes[i], span=nodes[i+1]-start;
+                if(i>0) { pos.push({p:start, type:'manual', ref:mans[i-1].t}); cExtra++; }
+                if(span>0){
+                    let n=Math.ceil(span/maxD), d=span/n;
+                    for(let k=1; k<n; k++) { pos.push({p:start+d*k, type:'auto', ref:'SZH'}); cSZH++; }
+                }
+            }
+            segRes.push(pos);
+        });
+        return {segments:segRes, cSZH, cExtra};
+    }
+
+    // --- DRAW & BOM ---
+    function drawPreview(){
+        const cvs=document.getElementById('geo-canvas'), ctx=cvs.getContext('2d');
+        const w=cvs.width, h=cvs.height; ctx.clearRect(0,0,w,h);
+        let pts=[{x:0,y:0}], ang=0, bom={};
+
+        if(currentSystem==='barandilla'){
+            let tData=[];
+            document.querySelectorAll('.b-tramo').forEach((el,i)=>{
+                let aInput = parseFloat(el.querySelector('.b-angle').value)||0;
+                ang = i===0 ? aInput : ang+aInput;
+                let l = parseFloat(el.querySelector('.b-len').value)||0;
+                tData.push({len:l, ang:ang});
+                let r=ang*Math.PI/180, last=pts[pts.length-1];
+                pts.push({x:last.x+l*Math.cos(r), y:last.y+l*Math.sin(r)});
+            });
+            if(pts.length<2) return;
+            // Scale
+            const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+            const sc = Math.min((w-100)/(Math.max(...xs)-Math.min(...xs)||1), (h-100)/(Math.max(...ys)-Math.min(...ys)||1)) || 20;
+            const toScr = (x,y)=>({x: 50+(x-Math.min(...xs))*sc+(w-100-(Math.max(...xs)-Math.min(...xs))*sc)/2, y: h-(50+(y-Math.min(...ys))*sc+(h-100-(Math.max(...ys)-Math.min(...ys))*sc)/2)});
+            
+            ctx.beginPath(); ctx.strokeStyle='#e67e22'; ctx.lineWidth=4;
+            pts.forEach((p,i)=>{ let s=toScr(p.x,p.y); if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y); }); ctx.stroke();
+            
+            const sol = solveBarandillaPosts(tData, document.getElementById('b-start-conf').value, document.getElementById('b-end-conf').value);
+            if(sol.posts){
+                tData.forEach((t,i)=>{
+                    let pStart=pts[i], r=t.ang*Math.PI/180;
+                    (sol.posts[i]||[]).forEach(d=>{
+                        let s=toScr(pStart.x+d*Math.cos(r), pStart.y+d*Math.sin(r));
+                        ctx.fillStyle='#0056b3'; ctx.beginPath(); ctx.arc(s.x,s.y,4,0,2*Math.PI); ctx.fill();
+                    });
+                });
+            }
+            document.getElementById('bom-display').innerText=`Postes: ${sol.count}`;
+            renderBOM({'1':"Extremos", '2':"Poste S50"});
+        } else {
+            let tData=[], suppRef = document.getElementById('lv-support-type').value==='poste' ? document.getElementById('lv-post-model').value : "Chapa Sand02";
+            let manualSet=new Set();
+            document.querySelectorAll('.lv-tramo').forEach((el,i)=>{
+                let l=parseFloat(el.querySelector('.lv-len').value)||0;
+                if(i===0) ang=parseFloat(el.querySelector('.lv-start-angle')?.value)||0;
+                let mans=[]; el.querySelectorAll('.manual-point-row').forEach(r=>{ let t=r.querySelector('.mp-type').value; mans.push({dist:r.querySelector('.mp-dist').value, type:t}); manualSet.add(t); });
+                let hasC=el.querySelector('.lv-end').value==='curva', cModel=hasC?el.querySelector('.lv-curve-type').value:null;
+                if(hasC) manualSet.add(cModel);
+                tData.push({len:l, ang:ang, manual:mans, hasCurve:hasC, curveModel:cModel});
+                let r=ang*Math.PI/180, last=pts[pts.length-1];
+                pts.push({x:last.x+l*Math.cos(r), y:last.y+l*Math.sin(r)});
+                if(hasC) ang+=parseFloat(el.querySelector('.lv-angle').value)||0;
+            });
+            if(pts.length<2) return;
+            const sol=solveLvPosts(tData);
+            document.getElementById('bom-display').innerText=`SZH: ${sol.cSZH} | Extras: ${sol.cExtra}`;
+            
+            let manArr=Array.from(manualSet).sort(), manMap={}; manArr.forEach((m,i)=>manMap[m]=3+i);
+            
+            const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+            const sc = Math.min((w-100)/(Math.max(...xs)-Math.min(...xs)||1), (h-100)/(Math.max(...ys)-Math.min(...ys)||1)) || 20;
+            const toScr = (x,y)=>({x: 50+(x-Math.min(...xs))*sc+(w-100-(Math.max(...xs)-Math.min(...xs))*sc)/2, y: h-(50+(y-Math.min(...ys))*sc+(h-100-(Math.max(...ys)-Math.min(...ys))*sc)/2)});
+
+            ctx.beginPath(); ctx.strokeStyle='#27ae60'; ctx.lineWidth=4;
+            pts.forEach((p,i)=>{ let s=toScr(p.x,p.y); if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y); }); ctx.stroke();
+            
+            ctx.font="bold 20px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            // Points
+            pts.forEach((p,i)=>{
+                let s=toScr(p.x,p.y);
+                if(i===0 || i===pts.length-1){
+                    ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(s.x,s.y,8,0,2*Math.PI); ctx.fill();
+                    ctx.fillStyle='orange'; ctx.fillText("1",s.x+15,s.y-15);
+                } else {
+                    let prev=tData[i-1];
+                    if(prev.hasCurve){
+                        ctx.fillStyle='orange'; ctx.fillRect(s.x-8,s.y-8,16,16);
+                        ctx.fillStyle='white'; ctx.font="bold 12px Arial"; ctx.fillText(manMap[prev.curveModel],s.x,s.y); ctx.font="bold 20px Arial";
+                    } else { ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(s.x,s.y,5,0,2*Math.PI); ctx.fill(); }
+                }
+            });
+            // Intermediates
+            let curAng = tData.length ? tData[0].ang : 0;
+            tData.forEach((t,i)=>{
+                let pStart=pts[i], r=curAng*Math.PI/180;
+                sol.segments[i].forEach(post=>{
+                    let s=toScr(pStart.x+post.p*Math.cos(r), pStart.y+post.p*Math.sin(r));
+                    let lbl="2";
+                    if(post.type==='manual'){ ctx.fillStyle='orange'; ctx.fillRect(s.x-6,s.y-6,12,12); lbl=manMap[post.ref]; }
+                    else { ctx.fillStyle='#2ecc71'; ctx.beginPath(); ctx.arc(s.x,s.y,5,0,2*Math.PI); ctx.fill(); }
+                    ctx.fillStyle='orange'; ctx.fillText(lbl,s.x+15,s.y-15);
+                });
+                if(i<tData.length-1) curAng=tData[i+1].ang;
+            });
+
+            // BOM Data
+            const v=document.getElementById('lv-variant').value;
+            const eb=document.getElementById('lv-eb-model').value;
+            const szh=document.getElementById('lv-szh-model').value;
+            bom['1'] = (v==='Ends50') ? `${suppRef} + Ends50` : `${suppRef} + Ends10 + ${eb}`;
+            bom['2'] = `${suppRef} + ${szh}`;
+            for(let [k,v] of Object.entries(manMap)) bom[v] = `${suppRef} + ${k}`;
+            renderBOM(bom);
+        }
+    }
+    function renderBOM(data){
+        const b=document.getElementById('bom-table-body'); b.innerHTML='';
+        Object.keys(data).sort((x,y)=>x-y).forEach(k=>{
+            b.insertAdjacentHTML('beforeend', `<tr><td><span class="bom-badge">${k}</span></td><td>Tipo ${k}</td><td>${data[k]}</td></tr>`);
+        });
+    }
+
+    // --- FOTO OVERLAY ---
+    const canvas=document.getElementById('editor'), ctx=canvas.getContext('2d');
+    function loadPhoto(e){ if(e.target.files[0]){const r=new FileReader();r.onload=ev=>{imgObj.onload=()=>{const s=Math.min(800/imgObj.width,1);canvas.width=imgObj.width*s;canvas.height=imgObj.height*s;renderEditor();};imgObj.src=ev.target.result;};r.readAsDataURL(e.target.files[0]);} }
+    function importPlanToPhoto(){
+        if(!imgObj.src) return alert("Carga foto");
+        const pc=document.getElementById('geo-canvas'); overlay.img=new Image(); overlay.img.src=pc.toDataURL();
+        overlay.img.onload=()=>{ overlay.active=true; overlay.scale=1; overlay.x=(canvas.width-overlay.img.width)/2; overlay.y=(canvas.height-overlay.img.height)/2; document.getElementById('overlay-controls').style.display='block'; renderEditor(); }
+    }
+    function fixOverlay(){ overlay.active=false; document.getElementById('overlay-controls').style.display='none'; const t=document.createElement('canvas'); t.width=canvas.width; t.height=canvas.height; t.getContext('2d').drawImage(canvas,0,0); imgObj.src=t.toDataURL(); }
+    function renderEditor(){
+        ctx.clearRect(0,0,canvas.width,canvas.height); if(imgObj.src) ctx.drawImage(imgObj,0,0,canvas.width,canvas.height);
+        if(overlay.active && overlay.img){ const s=parseFloat(document.getElementById('overlay-scale').value); overlay.scale=s; ctx.drawImage(overlay.img, overlay.x, overlay.y, overlay.img.width*s, overlay.img.height*s); }
+    }
+    // Canvas events
+    let sX, sY, snap;
+    canvas.onmousedown=e=>{if(overlay.active){overlay.isDragging=true;sX=e.offsetX-overlay.x;sY=e.offsetY-overlay.y;}else{isDrawing=true;sX=e.offsetX;sY=e.offsetY;ctx.beginPath();snap=ctx.getImageData(0,0,canvas.width,canvas.height);}};
+    canvas.onmousemove=e=>{if(overlay.active && overlay.isDragging){overlay.x=e.offsetX-sX;overlay.y=e.offsetY-sY;renderEditor();}else if(isDrawing){ctx.putImageData(snap,0,0);ctx.lineWidth=5;ctx.strokeStyle="red";ctx.lineCap="round";ctx.beginPath();ctx.moveTo(sX,sY);ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke();}};
+    canvas.onmouseup=()=>{isDrawing=false;overlay.isDragging=false;};
+    canvas.ontouchstart=e=>{const r=canvas.getBoundingClientRect(), tx=e.touches[0].clientX-r.left, ty=e.touches[0].clientY-r.top; if(overlay.active){overlay.isDragging=true;sX=tx-overlay.x;sY=ty-overlay.y;}else{isDrawing=true;sX=tx;sY=ty;ctx.beginPath();snap=ctx.getImageData(0,0,canvas.width,canvas.height);}};
+    canvas.ontouchmove=e=>{e.preventDefault(); const r=canvas.getBoundingClientRect(), tx=e.touches[0].clientX-r.left, ty=e.touches[0].clientY-r.top; if(overlay.active&&overlay.isDragging){overlay.x=tx-sX;overlay.y=ty-sY;renderEditor();}else if(isDrawing){ctx.putImageData(snap,0,0);ctx.lineWidth=5;ctx.strokeStyle="red";ctx.lineCap="round";ctx.beginPath();ctx.moveTo(sX,sY);ctx.lineTo(tx,ty);ctx.stroke();}};
+    canvas.ontouchend=()=>{isDrawing=false;overlay.isDragging=false;};
+    function clearDraw(){ imgObj.src=imgObj.src; setTimeout(renderEditor,50); }
+    function enableDraw(){} // Dummy for buttons, logic in events
+    function savePhoto(){ if(canvas.width) { savedPhotos.push(canvas.toDataURL('image/jpeg',0.6)); document.getElementById('gallery-grid').insertAdjacentHTML('beforeend',`<img src="${savedPhotos[savedPhotos.length-1]}" class="thumb">`); document.getElementById('photo-count').innerText=savedPhotos.length; } }
+
+    // --- EXPORT COMPATIBLE ---
+    function exportJSON(){
+        const d = {
+            layoutType: 'Recto/Curvas', calculated: false, results: null,
+            layoutData: { longitud:0, isClosedLoop:document.getElementById('lv-loop')?.checked||false, direccionInicial:0, curvas:[], branches:[], puntosFijos:[], puntosAnclajeExtra:[], aioStopPositions:[], shock11_qty:parseInt(document.getElementById('lv-shock-qty')?.value)||0 },
+            backgroundConfig: { image:null, x:0, y:0, width:20, height:20, opacity:0.5 },
+            quoteConfig: { clientIndex:0, offerNumber:"2152/25", date:document.getElementById('g-date').value },
+            uiParams: { linea_tipo: document.getElementById('lv-variant')?.value||'Ends50', espesor: document.getElementById('lv-chapa-thick')?.value||'0.6', eb_tipo: document.getElementById('lv-eb-model')?.value||'AIO-EB-13', szh_tipo: document.getElementById('lv-szh-model')?.value||'AIO-SZH-13', usar_alza:true, ends50_config:'mixed' }
+        };
+        
+        if(currentSystem==='linea_vida'){
+            let totalL=0;
+            document.querySelectorAll('.lv-tramo').forEach((el,i)=>{
+                let l=parseFloat(el.querySelector('.lv-len').value)||0; totalL+=l;
+                if(i===0) d.layoutData.direccionInicial = parseFloat(el.querySelector('.lv-start-angle')?.value)||0;
+                
+                let startPos = totalL-l;
+                el.querySelectorAll('.manual-point-row').forEach(r=>{
+                    d.layoutData.puntosFijos.push({ id:Date.now()+Math.random(), posicion: parseFloat((startPos+parseFloat(r.querySelector('.mp-dist').value)).toFixed(2)) });
+                });
+                
+                if(el.querySelector('.lv-end').value==='curva'){
+                    d.layoutData.curvas.push({ id:Date.now()+i, posicion:parseFloat(totalL.toFixed(2)), angulo:parseFloat(el.querySelector('.lv-angle').value)||0, tipo:el.querySelector('.lv-curve-type').value, unidades:1 });
+                }
+            });
+            d.layoutData.longitud = totalL;
+        } else {
+            // Barandilla basic export
+            d.tecnico = { type:'barandilla', data: document.getElementById('bom-display').innerText };
+        }
+        
+        const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'})); a.download=`Instalacion_${d.quoteConfig.date}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    addBarandillaTramo(); addLvTramo(); toggleLvConfig();
+</script>
+</body>
+</html>

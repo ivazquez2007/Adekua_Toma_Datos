@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 Toma de Datos Master v6 (ERP Ready)</title>
+    <style>
+        :root { --primary: #0056b3; --accent: #e67e22; --bg: #f4f6f8; --success: #27ae60; --danger: #c0392b; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; padding-bottom: 90px; }
+        
+        /* HEADER */
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* TABS */
+        .nav-tabs { display: flex; background: white; border-bottom: 1px solid #ddd; position: sticky; top: 50px; z-index: 90; overflow-x: auto; }
+        .tab-btn { flex: 1; padding: 15px 10px; border: none; background: none; font-weight: 600; color: #7f8c8d; cursor: pointer; border-bottom: 4px solid transparent; transition: 0.3s; white-space: nowrap; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: #f8f9fa; }
+        
+        /* CONTAINER */
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+        .section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARDS */
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #e1e4e8; }
+        h2 { font-size: 1rem; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 0; margin-bottom: 15px; }
+        h3 { font-size: 0.9rem; color: #555; margin-bottom: 5px; font-weight: 600; }
+        
+        /* INPUTS */
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 0.85rem; color: #34495e; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
+        
+        /* CHECKBOX GROUP */
+        .check-group { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f1f1; }
+        .check-group input { width: 20px; height: 20px; margin-right: 10px; }
+        
+        /* BUTTONS */
+        .btn-full { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; text-align: center; }
+        .btn-add { background: var(--success); color: white; }
+        .btn-save { background: var(--primary); color: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        .remove-btn { position: absolute; top: 10px; right: 10px; color: var(--danger); background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; }
+
+        /* SYSTEM SELECTOR */
+        .sys-selector { display: flex; gap: 10px; }
+        .sys-btn { flex: 1; padding: 15px; border: 2px solid #dfe6e9; border-radius: 8px; background: white; font-weight: bold; cursor: pointer; text-align: center; transition: 0.2s; }
+        .sys-btn.active { border-color: var(--primary); background: #ebf5fb; color: var(--primary); }
+
+        /* VISUALIZACION (CANVAS) */
+        #geo-preview-container {
+            width: 100%; height: 350px; background: #2c3e50; 
+            border-radius: 8px; margin-bottom: 15px; position: sticky; top: 110px; z-index: 80;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3); border: 1px solid #1a252f;
+        }
+        canvas { display: block; }
+        .preview-label { position: absolute; top: 10px; left: 10px; color: white; font-size: 0.8rem; opacity: 0.7; pointer-events: none; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;}
+
+        /* UTILS */
+        .hidden { display: none !important; }
+        .conditional-box { background-color: #fff8e1; border: 1px solid #ffe0b2; padding: 15px; border-radius: 6px; margin-top: 10px; }
+        .tramo-card { background: #fdfdfd; border-left: 4px solid var(--accent); padding: 15px; margin-bottom: 10px; position: relative; border-radius: 4px; border: 1px solid #eee; border-left-width: 4px; }
+        .config-card { border-left: 4px solid var(--primary); background: #eef2f5; }
+
+        /* FOTOS */
+        #canvas-container { position: relative; width: 100%; height: 300px; border: 2px dashed #ccc; margin: 10px 0; background: #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 15px; }
+        .thumb { width: 100%; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
+        
+        /* FOOTER */
+        .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px; background: white; border-top: 1px solid #ddd; z-index: 999; display: flex; gap: 10px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📐 Toma de Datos v6</h1>
+</header>
+
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-general')">1. General</button>
+    <button class="tab-btn" onclick="switchTab('tab-tecnico')">2. Soportes/Comp.</button>
+    <button class="tab-btn" onclick="switchTab('tab-geometria')">3. Plano</button>
+    <button class="tab-btn" onclick="switchTab('tab-fotos')">4. Fotos</button>
+</div>
+
+<div class="container">
+
+    <div id="tab-general" class="section active">
+        <div class="card">
+            <h2>Datos del Proyecto</h2>
+            <label>Cliente</label><input type="text" id="g-client">
+            <label>Obra</label><input type="text" id="g-site">
+            <label>Fecha</label><input type="date" id="g-date">
+        </div>
+
+        <div class="card">
+            <h2>Sistema a Presupuestar</h2>
+            <div class="sys-selector">
+                <div class="sys-btn active" id="btn-barandilla" onclick="setSystem('barandilla')">🛡️ Barandilla</div>
+                <div class="sys-btn" id="btn-linea" onclick="setSystem('linea_vida')">⚓ Línea de Vida</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-tecnico" class="section">
+        
+        <div id="tech-barandilla">
+            <div class="card">
+                <h2>Fijación Barandilla</h2>
+                <label>Tipo de Fijación</label>
+                <select id="b-fix-type" onchange="toggleBarandillaOpts()">
+                    <option value="contrapeso">Autoportante (Contrapeso)</option>
+                    <option value="metalica">Fijación a Metal</option>
+                    <option value="hormigon">Fijación a Hormigón</option>
+                </select>
+
+                <div id="opts-b-contrapeso" class="conditional-box">
+                    <label>Tipo de Superficie</label>
+                    <select id="b-surface">
+                        <option value="grava">Grava / Canto rodado</option>
+                        <option value="asfaltica">Tela Asfáltica</option>
+                        <option value="pvc_tpo">Lámina PVC / TPO</option>
+                        <option value="losa">Losa Hormigón / Baldosa</option>
+                        <option value="delicado">Suelo Delicado (Fieltro)</option>
+                    </select>
+                </div>
+
+                <div id="opts-b-metal" class="conditional-box hidden">
+                    <label>Tipo Metal</label><input type="text" id="b-metal-desc" placeholder="Ej: Viga IPN">
+                    <label>¿Tornillería Pasante?</label>
+                    <select id="b-metal-pasante"><option value="no">No</option><option value="si">Sí</option></select>
+                </div>
+
+                <div id="opts-b-hormigon" class="conditional-box hidden">
+                    <label>Estado</label>
+                    <select id="b-hormigon-status"><option value="bueno">Bueno</option><option value="malo">Malo</option></select>
+                    <label>Ancho Peto (cm)</label><input type="number" id="b-peto-width">
+                </div>
+            </div>
+        </div>
+
+        <div id="tech-linea" class="hidden">
+            <div class="card config-card">
+                <h2>Definición de Componentes (BOM)</h2>
+                <p style="font-size:0.8rem; color:#666;">Seleccione las referencias para el cálculo de materiales.</p>
+                
+                <label>Elemento de Extremo (EB)</label>
+                <select id="lv-eb-model"></select>
+                
+                <label>Elemento Intermedio (SZH)</label>
+                <select id="lv-szh-model"></select>
+            </div>
+
+            <div class="card">
+                <h2>Soporte Línea de Vida</h2>
+                <label>Estructura</label>
+                <select id="lv-support-type" onchange="toggleLvOpts()">
+                    <option value="sand02">Cubierta Chapa (Sandwich/Deck)</option>
+                    <option value="poste">Poste Estructural</option>
+                </select>
+
+                <div id="opts-lv-chapa" class="conditional-box">
+                    <label>Tipo Chapa</label>
+                    <select id="lv-chapa-type"><option value="sandwich">Panel Sandwich</option><option value="grecada">Grecada Simple</option><option value="deck">Deck</option></select>
+                    <label>Espesor</label>
+                    <select id="lv-chapa-thick"><option value="0.5">Estándar (0.5-0.6mm)</option><option value="0.7">Gruesa (>0.63mm)</option></select>
+                </div>
+
+                <div id="opts-lv-poste" class="conditional-box hidden">
+                    <label>Modelo Poste (STA)</label>
+                    <select id="lv-post-model"></select> <label>Material Base</label>
+                    <select id="lv-base-mat"><option value="hormigon">Hormigón</option><option value="acero">Metal</option><option value="madera">Madera</option></select>
+                    
+                    <div style="margin-top:10px;">
+                        <div class="check-group">
+                            <input type="checkbox" id="chk-contraplaca"><label>Requiere Contraplaca</label>
+                        </div>
+                        <div class="check-group">
+                            <input type="checkbox" id="chk-herreria" onchange="document.getElementById('desc-herreria').classList.toggle('hidden',!this.checked)"><label>Herrería Especial</label>
+                        </div>
+                        <textarea id="desc-herreria" class="hidden" rows="2" placeholder="Detalle..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Seguridad y Accesos</h2>
+            <div class="check-group"><input type="checkbox" id="chk-grua"><label>Requiere Grúa Externa</label></div>
+            <div class="check-group"><input type="checkbox" id="chk-fragil"><label>Cubierta Frágil</label></div>
+            <div class="check-group"><input type="checkbox" id="chk-existente"><label>Línea existente a retirar/usar</label></div>
+            <div class="check-group"><input type="checkbox" id="chk-suministros"><label>Punto de Luz/Agua</label></div>
+            <label>Notas Accesos:</label><textarea id="txt-accesos" rows="2"></textarea>
+        </div>
+    </div>
+
+    <div id="tab-geometria" class="section">
+        
+        <div id="geo-preview-container">
+            <div class="preview-label">👁️ Vista Previa Automática</div>
+            <canvas id="geo-canvas" width="600" height="350"></canvas>
+        </div>
+
+        <div id="geo-barandilla">
+            <div class="card config-card">
+                <h3>Terminaciones</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div>
+                        <label>Comienzo Instalación</label>
+                        <select id="b-start-conf">
+                            <option value="R41">A pared/Unido (R41)</option>
+                            <option value="R91">Extremo Libre (R91)</option>
+                            <option value="R51">Libre pero Unido (R51)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Final Instalación</label>
+                        <select id="b-end-conf">
+                            <option value="R41">A pared/Unido (R41)</option>
+                            <option value="R91">Extremo Libre (R91)</option>
+                            <option value="R51">Libre pero Unido (R51)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="b-tramos-list"></div>
+            <button class="btn-full btn-add" onclick="addBarandillaTramo()">+ Añadir Tramo Recto</button>
+        </div>
+
+        <div id="geo-linea" class="hidden">
+            <div class="card" style="background: #e3f2fd; padding:10px;">
+                <div class="check-group">
+                    <input type="checkbox" id="lv-loop" onchange="drawPreview()">
+                    <label>Sistema Cerrado (Anillo)</label>
+                </div>
+            </div>
+            <div id="lv-tramos-list"></div>
+            <button class="btn-full btn-add" onclick="addLvTramo()">+ Añadir Segmento</button>
+            <p id="lv-total-len" style="text-align: right; font-weight: bold; margin-top: 10px;">Total: 0.00 m</p>
+        </div>
+    </div>
+
+    <div id="tab-fotos" class="section">
+        <div class="card" style="text-align: center;">
+            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="loadPhoto(event)">
+            <button class="btn-full" style="background:#555; color:white;" onclick="document.getElementById('cam-input').click()">📷 Tomar Foto</button>
+            <div id="canvas-container"><canvas id="editor"></canvas></div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="enableDraw()" style="padding:5px 15px;">✏️ Pintar</button>
+                <button onclick="clearDraw()" style="padding:5px 15px;">↺ Limpiar</button>
+                <button onclick="savePhoto()" style="padding:5px 15px; background:var(--success); color:white; border:none;">💾 Guardar</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Galería (<span id="photo-count">0</span>)</h3>
+            <div class="gallery" id="gallery-grid"></div>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer-fixed">
+    <button class="btn-full btn-save" onclick="exportJSON()">📤 Guardar Archivo JSON</button>
+</div>
+
+<script>
+    // --- DATOS MAESTROS ACTUALIZADOS ---
+    const STA_LIST = [
+        'STA-10-400', 'STA-10-600', 'STA-10-600-A4', 'STA-10-800', 
+        'STA-11-340', 'STA-11-470', 'STA-12-400', 'STA-12-600', 'STA-12-800', 
+        'STA-16-200', 'STA-16-500', 'STA-17-300', 'STA-17-400', 'STA-17-600',
+        'STA-30-300', 'STA-30-400', 'STA-30-500', 'STA-30-600', 'STA-30-700'
+    ];
+
+    // Nuevas listas solicitadas
+    const EB_LIST = [
+        'AIO-EB-10', 'AIO-EB-11', 'AIO-EB-12', 'AIO-EB-13', 
+        'AIO-EB-15', 'AIO-EB-16', 'AIO-EB-17'
+    ];
+    
+    const SZH_LIST = [
+        'AIO-SZH-10', 'AIO-SZH-11', 'AIO-SZH-12', 'AIO-SZH-13', 
+        'AIO-SZH-15', 'AIO-SZH-16', 'AIO-SZH-17'
+    ];
+
+    const EDLE_LIST = [
+        'AIO-EDLE-10', 'AIO-EDLE-11', 'AIO-EDLE-12', 'AIO-EDLE-13',
+        'AIO-EDLE-15', 'AIO-EDLE-16', 'AIO-EDLE-17'
+    ];
+
+    // --- INICIALIZACIÓN ---
+    let currentSystem = 'barandilla';
+    document.getElementById('g-date').valueAsDate = new Date();
+
+    // Rellenar Selects
+    function populateSelect(id, list) {
+        const sel = document.getElementById(id);
+        list.forEach(m => {
+            let opt = document.createElement('option');
+            opt.value = m; opt.text = m;
+            sel.appendChild(opt);
+        });
+    }
+
+    populateSelect('lv-post-model', STA_LIST);
+    populateSelect('lv-eb-model', EB_LIST);
+    populateSelect('lv-szh-model', SZH_LIST);
+
+    // Función auxiliar para EDLE en los tramos
+    function getEdleOptionsHTML() {
+        return EDLE_LIST.map(e => `<option value="${e}">${e}</option>`).join('');
+    }
+
+    // --- PESTAÑAS ---
+    function switchTab(tabId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        const map = {'tab-general':0, 'tab-tecnico':1, 'tab-geometria':2, 'tab-fotos':3};
+        document.querySelectorAll('.tab-btn')[map[tabId]].classList.add('active');
+        if(tabId === 'tab-geometria') setTimeout(drawPreview, 100);
+    }
+
+    function setSystem(sys) {
+        currentSystem = sys;
+        document.getElementById('btn-barandilla').classList.toggle('active', sys === 'barandilla');
+        document.getElementById('btn-linea').classList.toggle('active', sys === 'linea_vida');
+        document.getElementById('tech-barandilla').classList.toggle('hidden', sys !== 'barandilla');
+        document.getElementById('tech-linea').classList.toggle('hidden', sys !== 'linea_vida');
+        document.getElementById('geo-barandilla').classList.toggle('hidden', sys !== 'barandilla');
+        document.getElementById('geo-linea').classList.toggle('hidden', sys !== 'linea_vida');
+        drawPreview();
+    }
+
+    // --- LÓGICA TÉCNICA ---
+    function toggleBarandillaOpts() {
+        const type = document.getElementById('b-fix-type').value;
+        document.getElementById('opts-b-contrapeso').classList.toggle('hidden', type !== 'contrapeso');
+        document.getElementById('opts-b-metal').classList.toggle('hidden', type !== 'metalica');
+        document.getElementById('opts-b-hormigon').classList.toggle('hidden', type !== 'hormigon');
+    }
+    function toggleLvOpts() {
+        const type = document.getElementById('lv-support-type').value;
+        document.getElementById('opts-lv-chapa').classList.toggle('hidden', type !== 'sand02');
+        document.getElementById('opts-lv-poste').classList.toggle('hidden', type !== 'poste');
+    }
+
+    // --- GEOMETRÍA: BARANDILLA ---
+    function addBarandillaTramo() {
+        const container = document.getElementById('b-tramos-list');
+        const idx = container.children.length + 1;
+        
+        let cornerHtml = '';
+        if(idx > 1) {
+            cornerHtml = `
+            <div style="background:#eee; padding:8px; margin-bottom:5px; border-radius:4px;">
+                <label>Ángulo con anterior (º)</label>
+                <input type="number" class="b-angle" value="90" step="any" oninput="drawPreview()" placeholder="Ej: 90, 45, -30">
+            </div>`;
+        }
+
+        const html = `
+            <div class="tramo-card b-tramo">
+                <button class="remove-btn" onclick="this.parentElement.remove(); drawPreview()">×</button>
+                <h3>Tramo ${idx}</h3>
+                ${cornerHtml}
+                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
+                    <div><label>Longitud (m)</label><input type="number" class="b-len" step="0.01" oninput="drawPreview()"></div>
+                    <div><label>Rodapié</label><input type="checkbox" class="b-rodapie" style="margin-top:40px;"></div>
+                </div>
+                <label>Postes Fijos (m)</label><input type="text" class="b-fixed" placeholder="Ej: 1.5, 3.2">
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+        drawPreview();
+    }
+
+    // --- GEOMETRÍA: LÍNEA VIDA ---
+    function addLvTramo() {
+        const container = document.getElementById('lv-tramos-list');
+        const idx = container.children.length + 1;
+        const html = `
+            <div class="tramo-card lv-tramo" oninput="drawPreview(); calcLvTotal()">
+                <button class="remove-btn" onclick="this.parentElement.remove(); drawPreview(); calcLvTotal()">×</button>
+                <h3>Segmento ${idx}</h3>
+                <label>Longitud Recta (m)</label><input type="number" class="lv-len" step="0.01" value="0">
+                <div style="margin-top:10px; padding:10px; background:#e3f2fd; border-radius:4px;">
+                    <label>Al final:</label>
+                    <select class="lv-end" onchange="this.nextElementSibling.classList.toggle('hidden', this.value !== 'curva'); drawPreview()">
+                        <option value="nada">Sigue recto / Fin</option>
+                        <option value="curva">Hay Curva</option>
+                    </select>
+                    <div class="hidden">
+                        <label>Ángulo Giro (º)</label><input type="number" class="lv-angle" value="90" oninput="drawPreview()">
+                        <label>Modelo Curva (EDLE)</label>
+                        <select class="lv-curve-type">${getEdleOptionsHTML()}</select>
+                    </div>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+        drawPreview();
+    }
+
+    function calcLvTotal() {
+        let t = 0;
+        document.querySelectorAll('.lv-len').forEach(i => t += parseFloat(i.value||0));
+        document.getElementById('lv-total-len').innerText = `Total: ${t.toFixed(2)} m`;
+    }
+
+    // --- MOTOR DE DIBUJO (AUTO-ZOOM) ---
+    function drawPreview() {
+        const cvs = document.getElementById('geo-canvas');
+        const ctx = cvs.getContext('2d');
+        const width = cvs.width;
+        const height = cvs.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        let points = [{x: 0, y: 0}];
+        let currentAngle = 0; // Grados
+        
+        // Calcular Puntos
+        if (currentSystem === 'barandilla') {
+            document.querySelectorAll('.b-tramo').forEach((el, i) => {
+                if (i > 0) {
+                    const angleVal = parseFloat(el.querySelector('.b-angle').value) || 0;
+                    currentAngle += angleVal; // Relativo
+                }
+                const len = parseFloat(el.querySelector('.b-len').value) || 0;
+                const last = points[points.length - 1];
+                const rad = currentAngle * Math.PI / 180;
+                points.push({ x: last.x + len * Math.cos(rad), y: last.y + len * Math.sin(rad) });
+            });
+        } else {
+            document.querySelectorAll('.lv-tramo').forEach((el) => {
+                const len = parseFloat(el.querySelector('.lv-len').value) || 0;
+                let last = points[points.length - 1];
+                let rad = currentAngle * Math.PI / 180;
+                points.push({ x: last.x + len * Math.cos(rad), y: last.y + len * Math.sin(rad) });
+                
+                if (el.querySelector('.lv-end').value === 'curva') {
+                    const turn = parseFloat(el.querySelector('.lv-angle').value) || 0;
+                    currentAngle += turn;
+                }
+            });
+            if(document.getElementById('lv-loop').checked && points.length > 1) points.push(points[0]);
+        }
+
+        // Auto-Escalado
+        if(points.length < 2) return;
+        const xs = points.map(p => p.x); const ys = points.map(p => p.y);
+        const minX = Math.min(...xs); const maxX = Math.max(...xs);
+        const minY = Math.min(...ys); const maxY = Math.max(...ys);
+        const rangeX = maxX - minX; const rangeY = maxY - minY;
+        const padding = 50;
+        
+        let scale = Math.min((width - padding*2) / (rangeX || 1), (height - padding*2) / (rangeY || 1));
+        if(!isFinite(scale) || scale === 0) scale = 20;
+
+        // Dibujar
+        ctx.beginPath();
+        ctx.strokeStyle = currentSystem === 'barandilla' ? '#e67e22' : '#27ae60';
+        ctx.lineWidth = 4;
+        ctx.lineJoin = 'round';
+
+        points.forEach((p, i) => {
+            // Centrar
+            const cx = padding + (p.x - minX) * scale + (width - padding*2 - rangeX*scale)/2;
+            const cy = height - (padding + (p.y - minY) * scale + (height - padding*2 - rangeY*scale)/2);
+            
+            if (i === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy);
+            
+            // Nodos
+            ctx.fillStyle = '#fff'; ctx.fillRect(cx-3, cy-3, 6, 6);
+            
+            // Etiqueta Inicio
+            if(i === 0) {
+                ctx.fillStyle = 'red'; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, 2*Math.PI); ctx.fill();
+            }
+        });
+        ctx.stroke();
+    }
+
+    // --- FOTOS ---
+    const canvas = document.getElementById('editor'); const ctx = canvas.getContext('2d');
+    let imgObj = new Image(); let savedPhotos = []; let isDrawing = false;
+    
+    function loadPhoto(e) { if(e.target.files[0]) { const r = new FileReader(); r.onload=ev=>{imgObj.onload=()=>{const s=Math.min(600/imgObj.width,1); canvas.width=imgObj.width*s; canvas.height=imgObj.height*s; ctx.drawImage(imgObj,0,0,canvas.width,canvas.height);}; imgObj.src=ev.target.result;}; r.readAsDataURL(e.target.files[0]); } }
+    function enableDraw() { ctx.lineWidth=5; ctx.strokeStyle="red"; ctx.lineCap="round"; canvas.ontouchstart=e=>{isDrawing=true;ctx.beginPath();}; canvas.ontouchmove=e=>{e.preventDefault();if(isDrawing){const r=canvas.getBoundingClientRect();ctx.lineTo(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);ctx.stroke();}}; canvas.ontouchend=()=>{isDrawing=false;}; canvas.onmousedown=e=>{isDrawing=true;ctx.beginPath();ctx.moveTo(e.offsetX,e.offsetY);}; canvas.onmousemove=e=>{if(isDrawing){ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke();}}; canvas.onmouseup=()=>{isDrawing=false;}; }
+    function clearDraw() { ctx.drawImage(imgObj, 0, 0, canvas.width, canvas.height); }
+    function savePhoto() { if(!canvas.width) return; savedPhotos.push(canvas.toDataURL('image/jpeg',0.6)); const i=document.createElement('img'); i.src=savedPhotos[savedPhotos.length-1]; i.className='thumb'; document.getElementById('gallery-grid').appendChild(i); document.getElementById('photo-count').innerText=savedPhotos.length; }
+
+    // --- EXPORTAR ---
+    function exportJSON() {
+        const data = {
+            general: { cliente: document.getElementById('g-client').value, obra: document.getElementById('g-site').value, fecha: document.getElementById('g-date').value, sistema: currentSystem },
+            checklist: { grua: document.getElementById('chk-grua').checked, fragil: document.getElementById('chk-fragil').checked, existing: document.getElementById('chk-existente').checked, supplies: document.getElementById('chk-suministros').checked, notes: document.getElementById('txt-accesos').value },
+            fotos: savedPhotos
+        };
+
+        if(currentSystem==='barandilla') {
+            const fix = document.getElementById('b-fix-type').value;
+            let detail = {};
+            if(fix==='contrapeso') detail.surface = document.getElementById('b-surface').value;
+            if(fix==='metalica') { detail.type = document.getElementById('b-metal-desc').value; detail.pasante = document.getElementById('b-metal-pasante').value; }
+            if(fix==='hormigon') { detail.status = document.getElementById('b-hormigon-status').value; detail.peto = document.getElementById('b-peto-width').value; }
+
+            let len=[], ang=[], fixP=[], toe=[];
+            document.querySelectorAll('.b-tramo').forEach((el,i)=>{
+                len.push(parseFloat(el.querySelector('.b-len').value)||0);
+                toe.push(el.querySelector('.b-rodapie').checked);
+                const f=el.querySelector('.b-fixed').value; if(f) fixP[i]=f.split(',').map(Number);
+                if(i>0) ang.push(parseFloat(el.querySelector('.b-angle').value)||0);
+            });
+            
+            // CONFIGURACION EXTREMOS
+            const bomConfig = {
+                start: document.getElementById('b-start-conf').value,
+                end: document.getElementById('b-end-conf').value
+            };
+
+            data.tecnico = { appTarget: 'app.js', fixType: fix, fixDetail: detail, bomConfig: bomConfig, lengths: len, angles: ang, fixedPosts: fixP, toeBoards: toe };
+        } else {
+            const supp = document.getElementById('lv-support-type').value;
+            let curves=[]; let pos=0;
+            document.querySelectorAll('.lv-tramo').forEach(el=>{
+                const l=parseFloat(el.querySelector('.lv-len').value)||0; pos+=l;
+                if(el.querySelector('.lv-end').value==='curva') {
+                    curves.push({pos: parseFloat(pos.toFixed(2)), ang: parseFloat(el.querySelector('.lv-angle').value), model: el.querySelector('.lv-curve-type').value});
+                }
+            });
+            let params = {};
+            if(supp==='sand02') { params.type=document.getElementById('lv-chapa-type').value; params.thick=document.getElementById('lv-chapa-thick').value; }
+            else { params.model=document.getElementById('lv-post-model').value; params.mat=document.getElementById('lv-base-mat').value; params.plate=document.getElementById('chk-contraplaca').checked; params.custom=document.getElementById('chk-herreria').checked?document.getElementById('desc-herreria').value:'no'; }
+            
+            // CONFIGURACION COMPONENTES BOM
+            const bomConfig = {
+                eb_model: document.getElementById('lv-eb-model').value,
+                szh_model: document.getElementById('lv-szh-model').value
+            };
+
+            data.tecnico = { appTarget: supp==='sand02'?'calculations.js':'Calculations_postes.js', support: supp, params: params, bomConfig: bomConfig, layout: {len: pos, curves: curves, loop: document.getElementById('lv-loop').checked} };
+        }
+
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})); a.download = `Visita_${data.general.obra}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    addBarandillaTramo(); addLvTramo();
+</script>
+</body>
+</html>

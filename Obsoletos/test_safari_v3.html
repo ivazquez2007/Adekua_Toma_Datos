@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Safari iOS v3 - SIN DOMContentLoaded</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f4f6f8;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #0056b3;
+            background: white;
+            color: #0056b3;
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        }
+
+        button.active {
+            background: #0056b3;
+            color: white;
+        }
+
+        .page {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        h2 {
+            color: #0056b3;
+            margin-top: 0;
+        }
+
+        .status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="nav-buttons">
+        <button id="btn1" class="active">Página 1</button>
+        <button id="btn2">Página 2</button>
+    </div>
+
+    <div id="page1" class="page active">
+        <h2>📄 Página 1</h2>
+        <p>Esta es la primera página del test.</p>
+        <p><strong>Si ves la barra verde abajo con "✅ Script cargado", el JavaScript funciona.</strong></p>
+        <p>Pulsa "Página 2" para cambiar.</p>
+    </div>
+
+    <div id="page2" class="page">
+        <h2>📄 Página 2</h2>
+        <p>Esta es la segunda página del test.</p>
+        <p><strong>¡FUNCIONA! Los botones responden correctamente en Safari iOS. 🎉</strong></p>
+    </div>
+
+    <div id="status" class="status">⏳ Cargando script...</div>
+
+    <script>
+        // Global Error Handler
+        window.onerror = function (msg, url, line, col, error) {
+            alert("ERROR: " + msg + "\nLínea: " + line);
+            document.getElementById('status').textContent = "❌ ERROR: " + msg;
+            document.getElementById('status').style.background = "#c0392b";
+            return false;
+        };
+
+        // Fix iOS active state
+        document.addEventListener('touchstart', function () { }, { passive: true });
+
+        // NO usamos DOMContentLoaded - el script está al final, los elementos ya existen
+        // Update status INMEDIATAMENTE
+        document.getElementById('status').textContent = "✅ Script cargado - Pulsa los botones";
+
+        // Get elements
+        var btn1 = document.getElementById('btn1');
+        var btn2 = document.getElementById('btn2');
+        var page1 = document.getElementById('page1');
+        var page2 = document.getElementById('page2');
+
+        // Show page function
+        function showPage(pageNum) {
+            document.getElementById('status').textContent = "✅ Botón pulsado - Página " + pageNum;
+
+            if (pageNum === 1) {
+                btn1.classList.add('active');
+                btn2.classList.remove('active');
+                page1.classList.add('active');
+                page2.classList.remove('active');
+            } else {
+                btn1.classList.remove('active');
+                btn2.classList.add('active');
+                page1.classList.remove('active');
+                page2.classList.add('active');
+            }
+        }
+
+        // Add event listeners - using both click and touchend
+        btn1.addEventListener('click', function (e) {
+            e.preventDefault();
+            showPage(1);
+        });
+
+        btn1.addEventListener('touchend', function (e) {
+            e.preventDefault();
+            showPage(1);
+        });
+
+        btn2.addEventListener('click', function (e) {
+            e.preventDefault();
+            showPage(2);
+        });
+
+        btn2.addEventListener('touchend', function (e) {
+            e.preventDefault();
+            showPage(2);
+        });
+    </script>
+
+</body>
+
+</html>

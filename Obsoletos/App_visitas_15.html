@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 Toma de Datos v14 (Superposición + BOM)</title>
+    <style>
+        :root { --primary: #0056b3; --accent: #e67e22; --bg: #f4f6f8; --success: #27ae60; --danger: #c0392b; --purple: #6f42c1; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 0; padding-bottom: 90px; }
+        
+        /* HEADER */
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* TABS */
+        .nav-tabs { display: flex; background: white; border-bottom: 1px solid #ddd; position: sticky; top: 50px; z-index: 90; overflow-x: auto; }
+        .tab-btn { flex: 1; padding: 15px 10px; border: none; background: none; font-weight: 600; color: #7f8c8d; cursor: pointer; border-bottom: 4px solid transparent; transition: 0.3s; white-space: nowrap; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: #f8f9fa; }
+        
+        /* CONTAINER */
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+        .section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARDS */
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #e1e4e8; }
+        h2 { font-size: 1rem; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 0; margin-bottom: 15px; }
+        h3 { font-size: 0.9rem; color: #555; margin-bottom: 5px; font-weight: 600; }
+        
+        /* INPUTS */
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 0.85rem; color: #34495e; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
+        
+        /* CHECKBOX GROUP */
+        .check-group { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f1f1; }
+        .check-group input { width: 20px; height: 20px; margin-right: 10px; }
+        
+        /* BUTTONS */
+        .btn-full { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; text-align: center; }
+        .btn-add { background: var(--success); color: white; }
+        .btn-mini { padding: 5px 10px; font-size: 0.8rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; }
+        .btn-save { background: var(--primary); color: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        .btn-overlay { background: var(--purple); color: white; }
+        .remove-btn { position: absolute; top: 10px; right: 10px; color: var(--danger); background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; }
+
+        /* SYSTEM SELECTOR */
+        .sys-selector { display: flex; gap: 10px; }
+        .sys-btn { flex: 1; padding: 15px; border: 2px solid #dfe6e9; border-radius: 8px; background: white; font-weight: bold; cursor: pointer; text-align: center; transition: 0.2s; }
+        .sys-btn.active { border-color: var(--primary); background: #ebf5fb; color: var(--primary); }
+
+        /* VISUALIZACION (CANVAS) */
+        #geo-preview-container {
+            width: 100%; height: 350px; background: #2c3e50; 
+            border-radius: 8px; margin-bottom: 15px; position: sticky; top: 110px; z-index: 80;
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3); border: 1px solid #1a252f;
+        }
+        canvas { display: block; }
+        .preview-label { position: absolute; top: 10px; left: 10px; color: white; font-size: 0.8rem; opacity: 0.7; pointer-events: none; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;}
+        .bom-overlay { position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+        /* TABLA BOM */
+        #bom-table-container { margin-top: 0px; margin-bottom: 20px; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; overflow: hidden; }
+        .bom-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .bom-table th { background: #f8f9fa; text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #555; }
+        .bom-table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .bom-badge { display: inline-block; width: 24px; height: 24px; background: var(--accent); color: white; border-radius: 50%; text-align: center; line-height: 24px; font-weight: bold; font-size: 0.8rem; margin-right: 8px; }
+
+        /* UTILS */
+        .hidden { display: none !important; }
+        .conditional-box { background-color: #fff8e1; border: 1px solid #ffe0b2; padding: 15px; border-radius: 6px; margin-top: 10px; }
+        .tramo-card { background: #fdfdfd; border-left: 4px solid var(--accent); padding: 15px; margin-bottom: 10px; position: relative; border-radius: 4px; border: 1px solid #eee; border-left-width: 4px; }
+        .config-card { border-left: 4px solid var(--primary); background: #eef2f5; }
+        .manual-point-row { display: flex; gap: 5px; margin-top: 5px; align-items: center; background: #fff; border: 1px solid #ddd; padding: 5px; border-radius: 4px; }
+
+        /* FOTOS */
+        #canvas-container { position: relative; width: 100%; height: 300px; border: 2px dashed #ccc; margin: 10px 0; background: #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 15px; }
+        .thumb { width: 100%; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
+        
+        /* FOOTER */
+        .footer-fixed { position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px; background: white; border-top: 1px solid #ddd; z-index: 999; display: flex; gap: 10px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📐 Toma de Datos v14</h1>
+</header>
+
+<div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-general')">1. General</button>
+    <button class="tab-btn" onclick="switchTab('tab-tecnico')">2. Soportes/Comp.</button>
+    <button class="tab-btn" onclick="switchTab('tab-geometria')">3. Plano (Auto)</button>
+    <button class="tab-btn" onclick="switchTab('tab-fotos')">4. Fotos</button>
+</div>
+
+<div class="container">
+
+    <div id="tab-general" class="section active">
+        <div class="card">
+            <h2>Datos del Proyecto</h2>
+            <label>Cliente</label><input type="text" id="g-client">
+            <label>Obra</label><input type="text" id="g-site">
+            <label>Fecha</label><input type="date" id="g-date">
+        </div>
+
+        <div class="card">
+            <h2>Sistema a Presupuestar</h2>
+            <div class="sys-selector">
+                <div class="sys-btn active" id="btn-barandilla" onclick="setSystem('barandilla')">🛡️ Barandilla</div>
+                <div class="sys-btn" id="btn-linea" onclick="setSystem('linea_vida')">⚓ Línea de Vida</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-tecnico" class="section">
+        <div id="tech-barandilla">
+            <div class="card">
+                <h2>Fijación Barandilla</h2>
+                <label>Tipo de Fijación</label>
+                <select id="b-fix-type" onchange="toggleBarandillaOpts()">
+                    <option value="contrapeso">Autoportante (Contrapeso)</option>
+                    <option value="metalica">Fijación a Metal</option>
+                    <option value="hormigon">Fijación a Hormigón</option>
+                </select>
+                <div id="opts-b-contrapeso" class="conditional-box">
+                    <label>Tipo de Superficie</label>
+                    <select id="b-surface">
+                        <option value="grava">Grava / Canto rodado</option>
+                        <option value="asfaltica">Tela Asfáltica</option>
+                        <option value="pvc_tpo">Lámina PVC / TPO</option>
+                        <option value="losa">Losa Hormigón / Baldosa</option>
+                        <option value="delicado">Suelo Delicado (Fieltro)</option>
+                    </select>
+                </div>
+                <div id="opts-b-metal" class="conditional-box hidden">
+                    <label>Tipo Metal</label><input type="text" id="b-metal-desc" placeholder="Ej: Viga IPN">
+                    <label>¿Tornillería Pasante?</label>
+                    <select id="b-metal-pasante"><option value="no">No</option><option value="si">Sí</option></select>
+                </div>
+                <div id="opts-b-hormigon" class="conditional-box hidden">
+                    <label>Estado</label>
+                    <select id="b-hormigon-status"><option value="bueno">Bueno</option><option value="malo">Malo</option></select>
+                    <label>Ancho Peto (cm)</label><input type="number" id="b-peto-width">
+                </div>
+            </div>
+        </div>
+
+        <div id="tech-linea" class="hidden">
+            <div class="card config-card">
+                <h2>Definición de Componentes (BOM)</h2>
+                <label>Variante del Sistema</label>
+                <select id="lv-variant" onchange="toggleLvConfig(); drawPreview();">
+                    <option value="ends10">Ends10 (Estándar)</option>
+                    <option value="ends50">Ends50 (Simplificado)</option>
+                </select>
+                <div id="group-ends10">
+                    <label>Elemento de Extremo (EB)</label>
+                    <select id="lv-eb-model" onchange="drawPreview()"></select>
+                    <div class="check-group" style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
+                        <input type="checkbox" id="chk-shock" onchange="toggleShockOpts()">
+                        <label>¿Lleva Absorbedores?</label>
+                    </div>
+                    <div id="opts-shock" class="conditional-box hidden">
+                        <label>Cantidad Absorbedores</label>
+                        <input type="number" id="lv-shock-qty" value="0">
+                        <label>Tipo</label><select id="lv-shock-type"><option value="SHOCK10">Shock10</option><option value="SHOCK11">Shock11</option></select>
+                    </div>
+                </div>
+                <hr style="margin: 20px 0; border:0; border-top:1px solid #ddd;">
+                <label>Elemento Intermedio (SZH)</label>
+                <select id="lv-szh-model" onchange="drawPreview()"></select>
+            </div>
+
+            <div class="card">
+                <h2>Soporte Línea de Vida</h2>
+                <label>Estructura</label>
+                <select id="lv-support-type" onchange="toggleLvOpts(); drawPreview();">
+                    <option value="sand02">Cubierta Chapa (Sandwich/Deck)</option>
+                    <option value="poste">Poste Estructural</option>
+                </select>
+                <div id="opts-lv-chapa" class="conditional-box">
+                    <label>Tipo Chapa</label>
+                    <select id="lv-chapa-type"><option value="sandwich">Panel Sandwich</option><option value="grecada">Grecada Simple</option><option value="deck">Deck</option></select>
+                    <label>Espesor</label>
+                    <select id="lv-chapa-thick" onchange="drawPreview()">
+                        <option value="0.5">0.5 mm</option>
+                        <option value="0.6">0.6 mm</option>
+                        <option value="0.63">0.63 mm</option>
+                        <option value="0.7">0.7 mm</option>
+                        <option value="0.8">0.8 mm</option>
+                        <option value="1.0">1.0 mm</option>
+                    </select>
+                </div>
+                <div id="opts-lv-poste" class="conditional-box hidden">
+                    <label>Modelo Poste (STA)</label>
+                    <select id="lv-post-model" onchange="drawPreview()"></select> 
+                    <label>Material Base</label>
+                    <select id="lv-base-mat"><option value="hormigon">Hormigón</option><option value="acero">Metal</option><option value="madera">Madera</option></select>
+                    <div style="margin-top:10px;">
+                        <div class="check-group"><input type="checkbox" id="chk-contraplaca"><label>Requiere Contraplaca</label></div>
+                        <div class="check-group"><input type="checkbox" id="chk-herreria" onchange="document.getElementById('desc-herreria').classList.toggle('hidden',!this.checked)"><label>Herrería Especial</label></div>
+                        <textarea id="desc-herreria" class="hidden" rows="2" placeholder="Detalle..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Seguridad y Accesos</h2>
+            <div class="check-group"><input type="checkbox" id="chk-grua"><label>Requiere Grúa Externa</label></div>
+            <div class="check-group"><input type="checkbox" id="chk-fragil"><label>Cubierta Frágil</label></div>
+            <label>Notas Accesos:</label><textarea id="txt-accesos" rows="2"></textarea>
+        </div>
+    </div>
+
+    <div id="tab-geometria" class="section">
+        <div id="geo-preview-container">
+            <div class="preview-label">👁️ Plano de Instalación</div>
+            <canvas id="geo-canvas" width="600" height="350"></canvas>
+            <div class="bom-overlay" id="bom-display">Items: 0</div>
+        </div>
+        
+        <div id="bom-table-container">
+            <table class="bom-table">
+                <thead><tr><th style="width:50px;">#</th><th>Tipo de Punto</th><th>Configuración de Montaje</th></tr></thead>
+                <tbody id="bom-table-body"></tbody>
+            </table>
+        </div>
+
+        <div id="geo-barandilla">
+            <div class="card config-card">
+                <h3>Terminaciones</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><label>Comienzo</label><select id="b-start-conf" onchange="drawPreview()"><option value="R41">R41 (Pared)</option><option value="R91">R91 (Libre)</option><option value="R51">R51 (Libre/Unido)</option></select></div>
+                    <div><label>Final</label><select id="b-end-conf" onchange="drawPreview()"><option value="R41">R41 (Pared)</option><option value="R91">R91 (Libre)</option><option value="R51">R51 (Libre/Unido)</option></select></div>
+                </div>
+            </div>
+            <div id="b-tramos-list"></div>
+            <button class="btn-full btn-add" onclick="addBarandillaTramo()">+ Añadir Tramo Recto</button>
+        </div>
+
+        <div id="geo-linea" class="hidden">
+            <div class="card" style="background: #e3f2fd; padding:10px;">
+                <div class="check-group"><input type="checkbox" id="lv-loop" onchange="drawPreview()"><label>Sistema Cerrado (Anillo)</label></div>
+            </div>
+            <div id="lv-tramos-list"></div>
+            <button class="btn-full btn-add" onclick="addLvTramo()">+ Añadir Segmento</button>
+        </div>
+    </div>
+
+    <div id="tab-fotos" class="section">
+        <div class="card" style="text-align: center;">
+            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="loadPhoto(event)">
+            <button class="btn-full" style="background:#555; color:white; margin-bottom:10px;" onclick="document.getElementById('cam-input').click()">📷 Tomar Foto</button>
+            
+            <div id="canvas-container"><canvas id="editor"></canvas></div>
+            
+            <div id="overlay-controls" style="display:none; background:#f1f3f5; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #ddd;">
+                <label style="margin-top:0; color:var(--purple);">🗺️ Ajustar Plano</label>
+                <div style="display:flex; gap:10px; align-items:center; justify-content:center;">
+                    <span style="font-size:0.8rem;">Tam:</span>
+                    <input type="range" id="overlay-scale" min="0.1" max="3" step="0.1" value="1" oninput="renderEditor()">
+                    <button class="btn-mini" style="background:var(--success);" onclick="fixOverlay()">✅ Fijar</button>
+                </div>
+                <p style="font-size:0.7rem; color:#666; margin:5px 0;">Arrastra para mover. Usa la barra para escalar.</p>
+            </div>
+
+            <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="importPlanToPhoto()" class="btn-mini btn-overlay">🗺️ Superponer Plano</button>
+                <button onclick="enableDraw()" class="btn-mini">✏️ Pintar</button>
+                <button onclick="clearDraw()" class="btn-mini">↺ Limpiar</button>
+                <button onclick="savePhoto()" class="btn-mini btn-save">💾 Guardar</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Galería (<span id="photo-count">0</span>)</h3>
+            <div class="gallery" id="gallery-grid"></div>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer-fixed">
+    <button class="btn-full btn-save" onclick="exportJSON()">📤 Guardar Archivo JSON</button>
+</div>
+
+<script>
+    // --- DATOS MAESTROS ---
+    const STA_LIST = ['STA-10-400', 'STA-10-600', 'STA-10-600-A4', 'STA-10-800', 'STA-11-340', 'STA-11-470', 'STA-12-400', 'STA-12-600', 'STA-12-800', 'STA-16-200', 'STA-16-500', 'STA-17-300', 'STA-17-400', 'STA-17-600'];
+    const EB_LIST = ['AIO-EB-10', 'AIO-EB-11', 'AIO-EB-12', 'AIO-EB-13', 'AIO-EB-15', 'AIO-EB-16', 'AIO-EB-17'];
+    const SZH_LIST = ['AIO-SZH-10', 'AIO-SZH-11', 'AIO-SZH-12', 'AIO-SZH-13', 'AIO-SZH-15', 'AIO-SZH-16', 'AIO-SZH-17'];
+    const EDLE_LIST = ['AIO-EDLE-10', 'AIO-EDLE-11', 'AIO-EDLE-12', 'AIO-EDLE-13', 'AIO-EDLE-15', 'AIO-EDLE-16', 'AIO-EDLE-17', 'AIO-EDLE-19', 'AIO-EDLE-50'];
+    const EXTRA_ELEMENTS = ['AIO-EDLE-19', 'AIO-SZH-10', 'POSTE-REFUERZO', 'OTRO'];
+
+    // --- GLOBALES ---
+    let currentSystem = 'barandilla';
+    let globalCalculatedPosts = [];
+    // Variables FOTOS
+    let imgObj = new Image();
+    let savedPhotos = [];
+    let isDrawing = false;
+    let overlay = { img: null, x: 0, y: 0, scale: 1.0, active: false, isDragging: false };
+    
+    document.getElementById('g-date').valueAsDate = new Date();
+
+    // --- INIT ---
+    function populateSelect(id, list) { const sel = document.getElementById(id); list.forEach(m => { let opt=document.createElement('option'); opt.value=m; opt.text=m; sel.appendChild(opt); }); }
+    populateSelect('lv-post-model', STA_LIST); populateSelect('lv-eb-model', EB_LIST); populateSelect('lv-szh-model', SZH_LIST);
+    function getEdleOptionsHTML() { return EDLE_LIST.map(e => `<option value="${e}">${e}</option>`).join(''); }
+    function getExtraElemOptions() { return EXTRA_ELEMENTS.map(e => `<option value="${e}">${e}</option>`).join(''); }
+
+    // --- UI ---
+    function switchTab(tabId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        const map = {'tab-general':0, 'tab-tecnico':1, 'tab-geometria':2, 'tab-fotos':3};
+        document.querySelectorAll('.tab-btn')[map[tabId]].classList.add('active');
+        if(tabId === 'tab-geometria') setTimeout(drawPreview, 100);
+    }
+
+    function setSystem(sys) {
+        currentSystem = sys;
+        document.getElementById('btn-barandilla').classList.toggle('active', sys === 'barandilla');
+        document.getElementById('btn-linea').classList.toggle('active', sys === 'linea_vida');
+        document.getElementById('tech-barandilla').classList.toggle('hidden', sys !== 'barandilla');
+        document.getElementById('tech-linea').classList.toggle('hidden', sys !== 'linea_vida');
+        document.getElementById('geo-barandilla').classList.toggle('hidden', sys !== 'barandilla');
+        document.getElementById('geo-linea').classList.toggle('hidden', sys !== 'linea_vida');
+        drawPreview();
+    }
+
+    function toggleBarandillaOpts() {
+        const type = document.getElementById('b-fix-type').value;
+        document.getElementById('opts-b-contrapeso').classList.toggle('hidden', type !== 'contrapeso');
+        document.getElementById('opts-b-metal').classList.toggle('hidden', type !== 'metalica');
+        document.getElementById('opts-b-hormigon').classList.toggle('hidden', type !== 'hormigon');
+    }
+    function toggleLvOpts() {
+        const type = document.getElementById('lv-support-type').value;
+        document.getElementById('opts-lv-chapa').classList.toggle('hidden', type !== 'sand02');
+        document.getElementById('opts-lv-poste').classList.toggle('hidden', type !== 'poste');
+    }
+    function toggleLvConfig() {
+        document.getElementById('group-ends10').classList.toggle('hidden', document.getElementById('lv-variant').value === 'ends50');
+    }
+    function toggleShockOpts() {
+        document.getElementById('opts-shock').classList.toggle('hidden', !document.getElementById('chk-shock').checked);
+    }
+
+    // --- GEOMETRY ---
+    function addBarandillaTramo() {
+        const container = document.getElementById('b-tramos-list');
+        const idx = container.children.length + 1;
+        let angleLabel = idx === 1 ? "Dirección Inicial (º)" : "Giro respecto anterior (º)";
+        let defaultVal = idx === 1 ? "0" : "90";
+        const html = `
+            <div class="tramo-card b-tramo">
+                <button class="remove-btn" onclick="this.parentElement.remove(); drawPreview()">×</button>
+                <h3>Tramo ${idx}</h3>
+                <div style="background:#eee; padding:8px; margin-bottom:5px; border-radius:4px;"><label>${angleLabel}</label><input type="number" class="b-angle" value="${defaultVal}" oninput="drawPreview()"></div>
+                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
+                    <div><label>Longitud (m)</label><input type="number" class="b-len" step="0.01" oninput="drawPreview()"></div>
+                    <div><label>Rodapié</label><input type="checkbox" class="b-rodapie" style="margin-top:40px;"></div>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+        drawPreview();
+    }
+
+    function addLvTramo() {
+        const container = document.getElementById('lv-tramos-list');
+        const idx = container.children.length + 1;
+        let startHtml = idx===1 ? `<div style="background:#e8f5e9; padding:8px; margin-bottom:10px;"><label>Orientación Inicial (º)</label><input type="number" class="lv-start-angle" value="0" oninput="drawPreview()"></div>` : '';
+        const html = `
+            <div class="tramo-card lv-tramo" oninput="drawPreview()">
+                <button class="remove-btn" onclick="this.parentElement.remove(); drawPreview()">×</button>
+                <h3>Segmento ${idx}</h3>
+                ${startHtml}
+                <label>Longitud Recta (m)</label><input type="number" class="lv-len" step="0.01" value="0">
+                <div style="margin-top:10px; border-top:1px dashed #ccc; padding-top:5px;">
+                    <div class="manual-points-list"></div>
+                    <button class="btn-mini" onclick="addManualPoint(this)">+ P. Intermedio Manual</button>
+                </div>
+                <div style="margin-top:10px; padding:10px; background:#e3f2fd;">
+                    <label>Al final:</label>
+                    <select class="lv-end" onchange="this.nextElementSibling.classList.toggle('hidden', this.value !== 'curva'); drawPreview()">
+                        <option value="nada">Sigue recto / Fin</option>
+                        <option value="curva">Hay Curva</option>
+                    </select>
+                    <div class="hidden"><label>Giro (º)</label><input type="number" class="lv-angle" value="90"><label>Modelo</label><select class="lv-curve-type" onchange="drawPreview()">${getEdleOptionsHTML()}</select></div>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+        drawPreview();
+    }
+
+    function addManualPoint(btn) {
+        btn.previousElementSibling.insertAdjacentHTML('beforeend', `<div class="manual-point-row"><input type="number" class="mp-dist" placeholder="Dist" style="width:70px;" oninput="drawPreview()"><select class="mp-type" onchange="drawPreview()">${getExtraElemOptions()}</select><button onclick="this.parentElement.remove(); drawPreview()" style="color:red; border:none;">×</button></div>`);
+    }
+
+    // --- CALC ---
+    function solveBarandillaPosts(tramos, startType, endType) {
+        if(tramos.length === 0) return { posts: [], count: 0 };
+        const getOffset = (type) => { if(type === 'R91') return 0.35; if(type === 'R51') return 0.50; if(type === 'R41') return 2.50; return 0.35; };
+        const startOff = getOffset(startType);
+        const endOff = getOffset(endType);
+        if (tramos.length === 1) return calcSegmentPosts(tramos[0].len, startOff, endOff, 0);
+        const numCorners = tramos.length - 1;
+        const combinations = 1 << numCorners; 
+        let bestConfig = null; let minTotalPosts = Infinity;
+        for (let i = 0; i < combinations; i++) {
+            let currentTotal = 0; let currentLayout = [];
+            for (let t = 0; t < tramos.length; t++) {
+                let s_off = (t===0) ? startOff : (((i >> (t-1)) & 1) === 0 ? 1.5 : 0.4);
+                let e_off = (t===tramos.length-1) ? endOff : (((i >> t) & 1) === 0 ? 0.4 : 1.5);
+                const res = calcSegmentPosts(tramos[t].len, s_off, e_off, t);
+                currentTotal += res.count;
+                currentLayout.push(res.positions);
+            }
+            if (currentTotal < minTotalPosts) { minTotalPosts = currentTotal; bestConfig = currentLayout; }
+        }
+        return { posts: bestConfig, count: minTotalPosts };
+    }
+
+    function calcSegmentPosts(length, startM, endM) {
+        const positions = []; positions.push(startM);
+        const coverDist = length - startM - endM;
+        if (coverDist > 0) {
+            const spaces = Math.ceil(coverDist / 2.5);
+            const step = coverDist / spaces;
+            for(let k=1; k < spaces; k++) positions.push(startM + (step * k));
+        }
+        const lastPos = length - endM;
+        if (Math.abs(lastPos - startM) > 0.01) positions.push(lastPos);
+        return { positions: positions, count: positions.length };
+    }
+
+    function solveLvPosts(tramosData) {
+        const support = document.getElementById('lv-support-type').value;
+        const thick = parseFloat(document.getElementById('lv-chapa-thick').value) || 0.5;
+        let maxDist = (support === 'sand02' && thick > 0.63001) ? 12.0 : 10.0;
+        let totalSZH = 0; let totalExtras = 0; const segmentResults = [];
+        tramosData.forEach(tramo => {
+            if (tramo.len <= 0) { segmentResults.push([]); return; }
+            let manualPoints = tramo.manual.map(m => ({dist: parseFloat(m.dist), type: m.type})).filter(m => m.dist > 0 && m.dist < tramo.len).sort((a,b) => a.dist - b.dist);
+            let nodes = [0, ...manualPoints.map(m => m.dist), tramo.len];
+            let postsPositions = []; 
+            for (let i = 0; i < nodes.length - 1; i++) {
+                const span = nodes[i+1] - nodes[i];
+                if (i > 0) { postsPositions.push({ pos: nodes[i], type: 'manual', ref: manualPoints[i-1].type }); totalExtras++; }
+                if (span > 0) {
+                    const spaces = Math.ceil(span / maxDist);
+                    const realDist = span / spaces;
+                    for (let k = 1; k < spaces; k++) { postsPositions.push({ pos: nodes[i] + (realDist * k), type: 'auto', ref: 'SZH' }); totalSZH++; }
+                }
+            }
+            segmentResults.push(postsPositions);
+        });
+        return { segments: segmentResults, countSZH: totalSZH, countExtras: totalExtras };
+    }
+
+    // --- DRAW ---
+    function drawPreview() {
+        const cvs = document.getElementById('geo-canvas'); const ctx = cvs.getContext('2d');
+        const width = cvs.width; const height = cvs.height;
+        ctx.clearRect(0, 0, width, height);
+        let points = [{x: 0, y: 0}]; let currentAngle = 0; const bomData = {}; 
+
+        if (currentSystem === 'barandilla') {
+            let tramosData = [];
+            document.querySelectorAll('.b-tramo').forEach((el, i) => {
+                const angleInput = parseFloat(el.querySelector('.b-angle').value) || 0;
+                currentAngle = i===0 ? angleInput : currentAngle + angleInput;
+                const len = parseFloat(el.querySelector('.b-len').value)||0;
+                tramosData.push({len:len, angle:currentAngle});
+                const rad = currentAngle * Math.PI/180;
+                const last = points[points.length-1];
+                points.push({x:last.x+len*Math.cos(rad), y:last.y+len*Math.sin(rad)});
+            });
+            if(points.length<2) return;
+            const sol = solveBarandillaPosts(tramosData, document.getElementById('b-start-conf').value, document.getElementById('b-end-conf').value);
+            // Fit to screen
+            const xs=points.map(p=>p.x), ys=points.map(p=>p.y);
+            const scale = Math.min((width-100)/(Math.max(...xs)-Math.min(...xs)||1), (height-100)/(Math.max(...ys)-Math.min(...ys)||1)) || 20;
+            const toScreen = (x,y) => ({ x: 50 + (x-Math.min(...xs))*scale + (width-100-(Math.max(...xs)-Math.min(...xs))*scale)/2, y: height - (50 + (y-Math.min(...ys))*scale + (height-100-(Math.max(...ys)-Math.min(...ys))*scale)/2) });
+            // Draw
+            ctx.beginPath(); ctx.strokeStyle='#e67e22'; ctx.lineWidth=4;
+            points.forEach((p,i)=>{ const s=toScreen(p.x,p.y); if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y); });
+            ctx.stroke();
+            if(sol.posts && sol.posts.length > 0) {
+                tramosData.forEach((tramo, idx) => {
+                    const pStart = points[idx]; const rad = tramo.angle * Math.PI / 180;
+                    (sol.posts[idx] || []).forEach(dist => {
+                        const s = toScreen(pStart.x + dist*Math.cos(rad), pStart.y + dist*Math.sin(rad));
+                        ctx.fillStyle='#0056b3'; ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, 2*Math.PI); ctx.fill();
+                    });
+                });
+            }
+            document.getElementById('bom-display').innerText = `Postes S50: ${sol.count}`;
+            bomData['1'] = "Extremos"; bomData['2'] = "Poste S50"; renderBOMTableSimple(bomData);
+        } else {
+            let tramosData = [];
+            const supportRef = document.getElementById('lv-support-type').value === 'poste' ? document.getElementById('lv-post-model').value : "Chapa Sand02";
+            const ebModel = document.getElementById('lv-eb-model').value;
+            const szhModel = document.getElementById('lv-szh-model').value;
+            const manualTypesSet = new Set();
+
+            document.querySelectorAll('.lv-tramo').forEach((el, i) => {
+                const len = parseFloat(el.querySelector('.lv-len').value)||0;
+                if (i === 0) currentAngle = parseFloat(el.querySelector('.lv-start-angle')?.value) || 0;
+                const manuals = [];
+                el.querySelectorAll('.manual-point-row').forEach(row => { const type = row.querySelector('.mp-type').value; manuals.push({ dist: row.querySelector('.mp-dist').value, type: type }); manualTypesSet.add(type); });
+                const hasCurve = el.querySelector('.lv-end').value === 'curva';
+                const curveModel = hasCurve ? el.querySelector('.lv-curve-type').value : null;
+                if(hasCurve) manualTypesSet.add(curveModel);
+                tramosData.push({len: len, angle: currentAngle, manual: manuals, hasCurve: hasCurve, curveModel: curveModel});
+                const rad = currentAngle * Math.PI/180;
+                const last = points[points.length-1];
+                points.push({x:last.x+len*Math.cos(rad), y:last.y+len*Math.sin(rad)});
+                if(hasCurve) currentAngle += parseFloat(el.querySelector('.lv-angle').value)||0;
+            });
+
+            if(points.length<2) return;
+            const sol = solveLvPosts(tramosData);
+            document.getElementById('bom-display').innerText = `SZH: ${sol.countSZH} | Extras: ${sol.countExtras}`;
+            
+            const sortedManuals = Array.from(manualTypesSet).sort();
+            const manualMap = {}; sortedManuals.forEach((m, i) => manualMap[m] = 3 + i);
+
+            // Fit
+            const xs=points.map(p=>p.x), ys=points.map(p=>p.y);
+            const scale = Math.min((width-100)/(Math.max(...xs)-Math.min(...xs)||1), (height-100)/(Math.max(...ys)-Math.min(...ys)||1)) || 20;
+            const toScreen = (x,y) => ({ x: 50 + (x-Math.min(...xs))*scale + (width-100-(Math.max(...xs)-Math.min(...xs))*scale)/2, y: height - (50 + (y-Math.min(...ys))*scale + (height-100-(Math.max(...ys)-Math.min(...ys))*scale)/2) });
+
+            ctx.beginPath(); ctx.strokeStyle='#27ae60'; ctx.lineWidth=4;
+            points.forEach((p,i)=>{ const s=toScreen(p.x,p.y); if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y); });
+            ctx.stroke();
+
+            ctx.font = "bold 20px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            
+            // Nodes
+            points.forEach((p, idx) => {
+                const s = toScreen(p.x, p.y);
+                if (idx === 0 || idx === points.length - 1) { // Extremos
+                    ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(s.x, s.y, 8, 0, 2*Math.PI); ctx.fill();
+                    ctx.fillStyle='orange'; ctx.fillText("1", s.x + 15, s.y - 15);
+                } else { // Esquinas
+                    const prev = tramosData[idx-1];
+                    if (prev.hasCurve) {
+                        ctx.fillStyle='orange'; ctx.fillRect(s.x-8, s.y-8, 16, 16);
+                        ctx.fillStyle='white'; ctx.font="bold 12px Arial"; ctx.fillText(manualMap[prev.curveModel], s.x, s.y);
+                        ctx.font="bold 20px Arial"; 
+                    } else {
+                        ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, 2*Math.PI); ctx.fill();
+                    }
+                }
+            });
+
+            // Intermedios
+            let angleAcum = tramosData.length ? tramosData[0].angle : 0;
+            tramosData.forEach((tramo, idx) => {
+                const pStart = points[idx];
+                const rad = angleAcum * Math.PI / 180;
+                sol.segments[idx].forEach(post => {
+                    const s = toScreen(pStart.x + post.pos * Math.cos(rad), pStart.y + post.pos * Math.sin(rad));
+                    if (post.type === 'manual') {
+                        ctx.fillStyle = 'orange'; ctx.fillRect(s.x-6, s.y-6, 12, 12);
+                        ctx.fillStyle='orange'; ctx.fillText(manualMap[post.ref], s.x + 15, s.y - 15);
+                    } else {
+                        ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, 2*Math.PI); ctx.fill();
+                        ctx.fillStyle='orange'; ctx.fillText("2", s.x + 15, s.y - 15);
+                    }
+                });
+                if(idx < tramosData.length - 1) angleAcum = tramosData[idx+1].angle;
+            });
+
+            bomData['1'] = `${supportRef} + Ends + ${ebModel}`;
+            bomData['2'] = `${supportRef} + ${szhModel}`;
+            for (const [key, val] of Object.entries(manualMap)) { bomData[val] = `${supportRef} + ${key}`; }
+            renderBOMTableSimple(bomData);
+        }
+    }
+
+    function renderBOMTableSimple(data) {
+        const tbody = document.getElementById('bom-table-body'); tbody.innerHTML = '';
+        Object.keys(data).sort((a,b)=>a-b).forEach(k => {
+            tbody.insertAdjacentHTML('beforeend', `<tr><td><span class="bom-badge">${k}</span></td><td><strong>Tipo ${k}</strong></td><td>${data[k]}</td></tr>`);
+        });
+    }
+
+    // --- FOTOS & OVERLAY ---
+    const canvas = document.getElementById('editor'); const ctx = canvas.getContext('2d');
+    
+    function loadPhoto(e) { 
+        if(e.target.files[0]) {
+            const r = new FileReader();
+            r.onload = ev => {
+                imgObj.onload = () => {
+                    // Ajustar canvas a la foto pero limitando ancho
+                    const scale = Math.min(800 / imgObj.width, 1);
+                    canvas.width = imgObj.width * scale;
+                    canvas.height = imgObj.height * scale;
+                    renderEditor();
+                };
+                imgObj.src = ev.target.result;
+            };
+            r.readAsDataURL(e.target.files[0]);
+        }
+    }
+
+    function importPlanToPhoto() {
+        if (!imgObj.src) { alert("Carga una foto primero"); return; }
+        const planCanvas = document.getElementById('geo-canvas');
+        overlay.img = new Image();
+        overlay.img.src = planCanvas.toDataURL();
+        overlay.img.onload = () => {
+            overlay.active = true;
+            // Centrar overlay
+            overlay.scale = 1;
+            overlay.x = (canvas.width - overlay.img.width) / 2;
+            overlay.y = (canvas.height - overlay.img.height) / 2;
+            document.getElementById('overlay-controls').style.display = 'block';
+            renderEditor();
+        };
+    }
+
+    function fixOverlay() {
+        overlay.active = false;
+        document.getElementById('overlay-controls').style.display = 'none';
+        // "Quemar" el overlay en la imagen base para que al pintar encima no se borre
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tCtx = tempCanvas.getContext('2d');
+        tCtx.drawImage(canvas, 0, 0);
+        imgObj.src = tempCanvas.toDataURL(); // Actualizar la imagen base con lo que vemos
+        // (Nota: esto es un truco simple, en una app real se gestionarian capas)
+    }
+
+    function renderEditor() {
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        if(imgObj.src) ctx.drawImage(imgObj, 0, 0, canvas.width, canvas.height);
+        
+        if (overlay.active && overlay.img) {
+            const s = parseFloat(document.getElementById('overlay-scale').value);
+            overlay.scale = s;
+            const w = overlay.img.width * s;
+            const h = overlay.img.height * s;
+            ctx.drawImage(overlay.img, overlay.x, overlay.y, w, h);
+        }
+    }
+
+    // --- INTERACCION EDITOR ---
+    let startX, startY, snapshot;
+
+    // Mouse Events
+    canvas.onmousedown = e => { 
+        if (overlay.active) {
+            overlay.isDragging = true; startX = e.offsetX - overlay.x; startY = e.offsetY - overlay.y;
+        } else {
+            isDrawing = true; startX = e.offsetX; startY = e.offsetY; ctx.beginPath(); snapshot = ctx.getImageData(0,0,canvas.width,canvas.height);
+        }
+    };
+    canvas.onmousemove = e => { 
+        if (overlay.active && overlay.isDragging) {
+            overlay.x = e.offsetX - startX; overlay.y = e.offsetY - startY; renderEditor();
+        } else if (isDrawing) {
+            ctx.putImageData(snapshot,0,0);
+            ctx.lineWidth=5; ctx.strokeStyle="red"; ctx.lineCap="round";
+            ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke();
+        }
+    };
+    canvas.onmouseup = () => { isDrawing = false; overlay.isDragging = false; };
+
+    // Touch Events
+    canvas.ontouchstart = e => {
+        const r = canvas.getBoundingClientRect();
+        const tx = e.touches[0].clientX - r.left; const ty = e.touches[0].clientY - r.top;
+        if (overlay.active) {
+            overlay.isDragging = true; startX = tx - overlay.x; startY = ty - overlay.y;
+        } else {
+            isDrawing = true; startX = tx; startY = ty; ctx.beginPath(); snapshot = ctx.getImageData(0,0,canvas.width,canvas.height);
+        }
+    };
+    canvas.ontouchmove = e => {
+        e.preventDefault();
+        const r = canvas.getBoundingClientRect();
+        const tx = e.touches[0].clientX - r.left; const ty = e.touches[0].clientY - r.top;
+        if (overlay.active && overlay.isDragging) {
+            overlay.x = tx - startX; overlay.y = ty - startY; renderEditor();
+        } else if (isDrawing) {
+            ctx.putImageData(snapshot,0,0);
+            ctx.lineWidth=5; ctx.strokeStyle="red"; ctx.lineCap="round";
+            ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(tx, ty); ctx.stroke();
+        }
+    };
+    canvas.ontouchend = () => { isDrawing = false; overlay.isDragging = false; };
+
+    function clearDraw(){ imgObj.src = imgObj.src; setTimeout(renderEditor, 50); } // Reset to last saved state
+    function savePhoto(){ if(!canvas.width)return; savedPhotos.push(canvas.toDataURL('image/jpeg',0.6)); const i=document.createElement('img'); i.src=savedPhotos[savedPhotos.length-1]; i.className='thumb'; document.getElementById('gallery-grid').appendChild(i); document.getElementById('photo-count').innerText=savedPhotos.length; }
+
+    // --- EXPORT ---
+    function exportJSON() {
+        const data = { general: { cliente: document.getElementById('g-client').value, obra: document.getElementById('g-site').value, sistema: currentSystem } };
+        // (Lógica de exportación igual a v13)
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})); a.download = `Visita.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    addBarandillaTramo(); addLvTramo(); toggleLvConfig();
+</script>
+</body>
+</html>
