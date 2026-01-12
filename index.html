@@ -1067,15 +1067,24 @@
                 <div id="overlay-controls"
                     style="display:none; background:#f1f3f5; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #ddd;">
                     <label style="margin-top:0; color:var(--purple);">🗺️ Ajustar Plano</label>
-                    <div style="display:flex; gap:10px; align-items:center; justify-content:center;">
-                        <span style="font-size:0.8rem;">Tam:</span>
+                    <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:8px;">
+                        <span style="font-size:0.8rem; min-width:35px;">Tam:</span>
                         <input type="range" id="overlay-scale" min="0.1" max="3" step="0.1" value="1"
-                            oninput="renderEditor()">
-                        <button class="btn-mini" style="background:var(--success);" onclick="fixOverlay()">✅
-                            Fijar</button>
+                            oninput="updateOverlayScale()" style="flex:1;">
+                        <span id="overlay-scale-value"
+                            style="font-size:0.8rem; min-width:40px; font-weight:bold; color:var(--purple);">100%</span>
                     </div>
-                    <p style="font-size:0.7rem; color:#666; margin:5px 0;">Arrastra para mover. Usa la barra para
-                        escalar.</p>
+                    <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:8px;">
+                        <span style="font-size:0.8rem; min-width:35px;">🔄:</span>
+                        <input type="range" id="overlay-rotation" min="0" max="360" step="1" value="0"
+                            oninput="updateOverlayRotation()" style="flex:1;">
+                        <span id="overlay-rotation-value"
+                            style="font-size:0.8rem; min-width:40px; font-weight:bold; color:var(--purple);">0°</span>
+                    </div>
+                    <button class="btn-mini" style="background:var(--success); width:100%;" onclick="fixOverlay()">✅
+                        Fijar Plano</button>
+                    <p style="font-size:0.7rem; color:#666; margin:5px 0 0 0;">Arrastra para mover. Usa las barras para
+                        escalar y rotar.</p>
                 </div>
 
                 <!-- Selector de Herramienta -->
@@ -1215,7 +1224,7 @@
         let imgObj = new Image();
         let savedPhotos = [];
         let isDrawing = false;
-        let overlay = { img: null, x: 0, y: 0, scale: 1.0, active: false, isDragging: false };
+        let overlay = { img: null, x: 0, y: 0, scale: 1.0, rotation: 0, active: false, isDragging: false };
 
         // Variables de Dibujo
         let drawTool = 'line'; // 'line', 'circle', 'square', 'triangle', 'x', 'text'
@@ -2665,10 +2674,16 @@
             overlay.img.src = planCanvas.toDataURL();
             overlay.img.onload = () => {
                 overlay.active = true;
-                // Centrar overlay
+                // Centrar overlay y resetear transformaciones
                 overlay.scale = 1;
+                overlay.rotation = 0;
                 overlay.x = (photoCanvas.width - overlay.img.width) / 2;
                 overlay.y = (photoCanvas.height - overlay.img.height) / 2;
+                // Actualizar controles UI
+                document.getElementById('overlay-scale').value = '1';
+                document.getElementById('overlay-scale-value').innerText = '100%';
+                document.getElementById('overlay-rotation').value = '0';
+                document.getElementById('overlay-rotation-value').innerText = '0°';
                 document.getElementById('overlay-controls').style.display = 'block';
                 renderEditor();
             };
@@ -2687,6 +2702,20 @@
             // (Nota: esto es un truco simple, en una app real se gestionarian capas)
         }
 
+        function updateOverlayScale() {
+            const s = parseFloat(document.getElementById('overlay-scale').value);
+            overlay.scale = s;
+            document.getElementById('overlay-scale-value').innerText = Math.round(s * 100) + '%';
+            renderEditor();
+        }
+
+        function updateOverlayRotation() {
+            const r = parseInt(document.getElementById('overlay-rotation').value);
+            overlay.rotation = r;
+            document.getElementById('overlay-rotation-value').innerText = r + '°';
+            renderEditor();
+        }
+
         function renderEditor() {
             photoCtx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
             if (imgObj.src) {
@@ -2699,11 +2728,26 @@
             }
 
             if (overlay.active && overlay.img) {
-                const s = parseFloat(document.getElementById('overlay-scale').value);
-                overlay.scale = s;
+                const s = overlay.scale;
                 const w = overlay.img.width * s;
                 const h = overlay.img.height * s;
-                photoCtx.drawImage(overlay.img, overlay.x, overlay.y, w, h);
+
+                // Guardar estado del contexto
+                photoCtx.save();
+
+                // Trasladar al centro del overlay para rotar desde ahí
+                const centerX = overlay.x + w / 2;
+                const centerY = overlay.y + h / 2;
+                photoCtx.translate(centerX, centerY);
+
+                // Aplicar rotación (convertir grados a radianes)
+                photoCtx.rotate(overlay.rotation * Math.PI / 180);
+
+                // Dibujar la imagen centrada en el origen de rotación
+                photoCtx.drawImage(overlay.img, -w / 2, -h / 2, w, h);
+
+                // Restaurar estado del contexto
+                photoCtx.restore();
             }
         }
 
