@@ -1052,11 +1052,11 @@
                 <button class="btn-full" style="background:#555; color:white; margin-bottom:10px;"
                     onclick="document.getElementById('cam-input').click()">📷 Tomar Foto</button>
 
-                <div id="canvas-container" style="position:relative;">
+                <div id="canvas-container" style="position:relative; overflow:visible;">
                     <canvas id="editor"></canvas>
                     <!-- 3D Overlay Element -->
                     <img id="overlay-3d"
-                        style="display:none; position:absolute; top:0; left:0; pointer-events:none; transform-origin:center center;">
+                        style="display:none; position:absolute; top:0; left:0; pointer-events:none; transform-origin:center center; z-index:9999;">
                 </div>
 
                 <!-- Controles de Escala de Foto -->
@@ -2848,6 +2848,7 @@
                 overlay3D.style.height = visualH + 'px';
                 overlay3D.style.left = visualX + 'px';
                 overlay3D.style.top = visualY + 'px';
+                overlay3D.style.zIndex = '99999'; // FORZAR z-index muy alto
 
                 // 🔴 DEBUG VISUAL: Añadir borde rojo y fondo para ver el overlay
                 overlay3D.style.border = '3px solid red';
@@ -2857,6 +2858,19 @@
                 console.log('🟡 DEBUG renderEditor: overlay-3d.style.display =', overlay3D.style.display);
                 console.log('🟡 DEBUG renderEditor: overlay-3d.style.left =', overlay3D.style.left);
                 console.log('🟡 DEBUG renderEditor: overlay-3d.style.top =', overlay3D.style.top);
+                console.log('🟡 DEBUG renderEditor: overlay-3d.style.zIndex =', overlay3D.style.zIndex);
+
+                // LOG getBoundingClientRect para ver si el elemento está en el viewport
+                const rect = overlay3D.getBoundingClientRect();
+                console.log('📐 DEBUG: overlay-3d getBoundingClientRect:', {
+                    top: rect.top,
+                    left: rect.left,
+                    width: rect.width,
+                    height: rect.height,
+                    bottom: rect.bottom,
+                    right: rect.right,
+                    visible: rect.width > 0 && rect.height > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth
+                });
 
                 // Aplicar transformación 3D con perspectiva
                 const transform = `
