@@ -456,6 +456,104 @@
             border: 1px solid #ccc;
         }
 
+        /* DRAWING TOOLS */
+        .tool-selector {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+            justify-content: center;
+        }
+
+        .tool-btn {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 60px;
+        }
+
+        .tool-btn.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .tool-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .color-selector {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .color-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 3px solid #ddd;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-btn.active {
+            border-color: #333;
+            transform: scale(1.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-group {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .control-row label {
+            margin: 0;
+            min-width: 80px;
+            font-size: 0.85rem;
+        }
+
+        .control-row input[type="range"] {
+            flex: 1;
+            margin: 0;
+        }
+
+        .control-row .value-display {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        #text-input-container {
+            margin: 10px 0;
+        }
+
+        #text-input-container input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
         /* FOOTER */
         .footer-fixed {
             position: fixed;
@@ -956,6 +1054,16 @@
 
                 <div id="canvas-container"><canvas id="editor"></canvas></div>
 
+                <!-- Controles de Escala de Foto -->
+                <div class="control-group" id="photo-scale-controls" style="display:none;">
+                    <div class="control-row">
+                        <label>📏 Escala Foto:</label>
+                        <input type="range" id="photo-scale" min="0.1" max="2" step="0.05" value="1"
+                            oninput="updatePhotoScale()">
+                        <span class="value-display" id="photo-scale-value">100%</span>
+                    </div>
+                </div>
+
                 <div id="overlay-controls"
                     style="display:none; background:#f1f3f5; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #ddd;">
                     <label style="margin-top:0; color:var(--purple);">🗺️ Ajustar Plano</label>
@@ -970,9 +1078,64 @@
                         escalar.</p>
                 </div>
 
+                <!-- Selector de Herramienta -->
+                <div class="control-group">
+                    <label style="margin:0 0 8px 0; display:block; text-align:center; font-weight:bold;">🎨
+                        Herramientas</label>
+                    <div class="tool-selector">
+                        <button class="tool-btn active" onclick="setDrawTool('line')">✏️ Línea</button>
+                        <button class="tool-btn" onclick="setDrawTool('circle')">⭕ Círculo</button>
+                        <button class="tool-btn" onclick="setDrawTool('square')">⬜ Cuadrado</button>
+                        <button class="tool-btn" onclick="setDrawTool('triangle')">🔺 Triángulo</button>
+                        <button class="tool-btn" onclick="setDrawTool('x')">❌ X</button>
+                        <button class="tool-btn" onclick="setDrawTool('text')">📝 Texto</button>
+                    </div>
+                </div>
+
+                <!-- Selector de Color -->
+                <div class="control-group">
+                    <label style="margin:0 0 8px 0; display:block; text-align:center; font-weight:bold;">🎨
+                        Colores</label>
+                    <div class="color-selector">
+                        <div class="color-btn active" style="background:#ff0000;" onclick="setDrawColor('#ff0000')"
+                            title="Rojo"></div>
+                        <div class="color-btn" style="background:#0000ff;" onclick="setDrawColor('#0000ff')"
+                            title="Azul"></div>
+                        <div class="color-btn" style="background:#00ff00;" onclick="setDrawColor('#00ff00')"
+                            title="Verde"></div>
+                        <div class="color-btn" style="background:#ffff00;" onclick="setDrawColor('#ffff00')"
+                            title="Amarillo"></div>
+                        <div class="color-btn" style="background:#000000;" onclick="setDrawColor('#000000')"
+                            title="Negro"></div>
+                        <div class="color-btn" style="background:#ffffff; border-color:#999;"
+                            onclick="setDrawColor('#ffffff')" title="Blanco"></div>
+                    </div>
+                </div>
+
+                <!-- Controles de Ajuste -->
+                <div class="control-group">
+                    <div class="control-row">
+                        <label>📏 Grosor:</label>
+                        <input type="range" id="line-width" min="1" max="20" step="1" value="5"
+                            oninput="updateLineWidth()">
+                        <span class="value-display" id="line-width-value">5px</span>
+                    </div>
+                    <div class="control-row">
+                        <label>📝 Tam. Texto:</label>
+                        <input type="range" id="text-size" min="12" max="72" step="2" value="24"
+                            oninput="updateTextSize()">
+                        <span class="value-display" id="text-size-value">24px</span>
+                    </div>
+                </div>
+
+                <!-- Input de Texto (solo visible cuando se selecciona herramienta texto) -->
+                <div id="text-input-container" style="display:none;">
+                    <input type="text" id="text-input" placeholder="Escribe el texto aquí..." maxlength="100">
+                    <p style="font-size:0.75rem; color:#666; margin:5px 0;">Haz clic en la foto para añadir el texto</p>
+                </div>
+
                 <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
                     <button onclick="importPlanToPhoto()" class="btn-mini btn-overlay">🗺️ Superponer Plano</button>
-                    <button onclick="enableDraw()" class="btn-mini">✏️ Pintar</button>
                     <button onclick="clearDraw()" class="btn-mini">↺ Limpiar</button>
                     <button onclick="savePhoto()" class="btn-mini btn-save">💾 Guardar</button>
                 </div>
@@ -1053,6 +1216,13 @@
         let savedPhotos = [];
         let isDrawing = false;
         let overlay = { img: null, x: 0, y: 0, scale: 1.0, active: false, isDragging: false };
+
+        // Variables de Dibujo
+        let drawTool = 'line'; // 'line', 'circle', 'square', 'triangle', 'x', 'text'
+        let drawColor = '#ff0000'; // Rojo por defecto
+        let lineWidth = 5;
+        let textSize = 24;
+        let photoScale = 1.0;
 
         // Draggable Labels State
         let labelOffsets = {}; // { id: { dx, dy } }
@@ -2443,12 +2613,49 @@
                         const scale = Math.min(800 / imgObj.width, 1);
                         photoCanvas.width = imgObj.width * scale;
                         photoCanvas.height = imgObj.height * scale;
+                        photoScale = 1.0;
+                        document.getElementById('photo-scale').value = '1';
+                        document.getElementById('photo-scale-value').innerText = '100%';
+                        document.getElementById('photo-scale-controls').style.display = 'block';
                         renderEditor();
                     };
                     imgObj.src = ev.target.result;
                 };
                 r.readAsDataURL(e.target.files[0]);
             }
+        }
+
+        // --- CONTROL FUNCTIONS ---
+        function setDrawTool(tool) {
+            drawTool = tool;
+            // Actualizar botones activos
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            // Mostrar/ocultar input de texto
+            document.getElementById('text-input-container').style.display = tool === 'text' ? 'block' : 'none';
+        }
+
+        function setDrawColor(color) {
+            drawColor = color;
+            // Actualizar botones activos
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function updateLineWidth() {
+            lineWidth = parseInt(document.getElementById('line-width').value);
+            document.getElementById('line-width-value').innerText = lineWidth + 'px';
+        }
+
+        function updateTextSize() {
+            textSize = parseInt(document.getElementById('text-size').value);
+            document.getElementById('text-size-value').innerText = textSize + 'px';
+        }
+
+        function updatePhotoScale() {
+            photoScale = parseFloat(document.getElementById('photo-scale').value);
+            document.getElementById('photo-scale-value').innerText = Math.round(photoScale * 100) + '%';
+            renderEditor();
         }
 
         function importPlanToPhoto() {
@@ -2482,7 +2689,14 @@
 
         function renderEditor() {
             photoCtx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
-            if (imgObj.src) photoCtx.drawImage(imgObj, 0, 0, photoCanvas.width, photoCanvas.height);
+            if (imgObj.src) {
+                // Aplicar escala de foto
+                const w = photoCanvas.width * photoScale;
+                const h = photoCanvas.height * photoScale;
+                const x = (photoCanvas.width - w) / 2;
+                const y = (photoCanvas.height - h) / 2;
+                photoCtx.drawImage(imgObj, x, y, w, h);
+            }
 
             if (overlay.active && overlay.img) {
                 const s = parseFloat(document.getElementById('overlay-scale').value);
@@ -2493,51 +2707,156 @@
             }
         }
 
+        // --- DRAWING FUNCTIONS ---
+        function drawShape(x1, y1, x2, y2) {
+            photoCtx.strokeStyle = drawColor;
+            photoCtx.fillStyle = drawColor;
+            photoCtx.lineWidth = lineWidth;
+            photoCtx.lineCap = "round";
+
+            switch (drawTool) {
+                case 'line':
+                    photoCtx.beginPath();
+                    photoCtx.moveTo(x1, y1);
+                    photoCtx.lineTo(x2, y2);
+                    photoCtx.stroke();
+                    break;
+
+                case 'circle':
+                    const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                    photoCtx.beginPath();
+                    photoCtx.arc(x1, y1, radius, 0, 2 * Math.PI);
+                    photoCtx.stroke();
+                    break;
+
+                case 'square':
+                    const width = x2 - x1;
+                    const height = y2 - y1;
+                    photoCtx.beginPath();
+                    photoCtx.rect(x1, y1, width, height);
+                    photoCtx.stroke();
+                    break;
+
+                case 'triangle':
+                    const baseWidth = x2 - x1;
+                    const topX = x1 + baseWidth / 2;
+                    const topY = y2;
+                    photoCtx.beginPath();
+                    photoCtx.moveTo(x1, y1); // Bottom left
+                    photoCtx.lineTo(x2, y1); // Bottom right
+                    photoCtx.lineTo(topX, topY); // Top
+                    photoCtx.closePath();
+                    photoCtx.stroke();
+                    break;
+
+                case 'x':
+                    photoCtx.beginPath();
+                    photoCtx.moveTo(x1, y1);
+                    photoCtx.lineTo(x2, y2);
+                    photoCtx.moveTo(x2, y1);
+                    photoCtx.lineTo(x1, y2);
+                    photoCtx.stroke();
+                    break;
+            }
+        }
+
+        function drawTextOnCanvas(x, y) {
+            const text = document.getElementById('text-input').value;
+            if (!text) {
+                alert('Por favor escribe un texto primero');
+                return;
+            }
+            photoCtx.font = `${textSize}px Arial`;
+            photoCtx.fillStyle = drawColor;
+            photoCtx.fillText(text, x, y);
+            // Guardar el estado actual
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = photoCanvas.width;
+            tempCanvas.height = photoCanvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.drawImage(photoCanvas, 0, 0);
+            imgObj.src = tempCanvas.toDataURL();
+        }
+
         // --- INTERACCION EDITOR ---
         let startX, startY, snapshot;
 
         // Mouse Events
         photoCanvas.onmousedown = e => {
             if (overlay.active) {
-                overlay.isDragging = true; startX = e.offsetX - overlay.x; startY = e.offsetY - overlay.y;
+                overlay.isDragging = true;
+                startX = e.offsetX - overlay.x;
+                startY = e.offsetY - overlay.y;
             } else {
-                isDrawing = true; startX = e.offsetX; startY = e.offsetY; photoCtx.beginPath(); snapshot = photoCtx.getImageData(0, 0, photoCanvas.width, photoCanvas.height);
+                // Si es texto, dibujarlo inmediatamente
+                if (drawTool === 'text') {
+                    drawTextOnCanvas(e.offsetX, e.offsetY);
+                } else {
+                    isDrawing = true;
+                    startX = e.offsetX;
+                    startY = e.offsetY;
+                    snapshot = photoCtx.getImageData(0, 0, photoCanvas.width, photoCanvas.height);
+                }
             }
         };
+
         photoCanvas.onmousemove = e => {
             if (overlay.active && overlay.isDragging) {
-                overlay.x = e.offsetX - startX; overlay.y = e.offsetY - startY; renderEditor();
+                overlay.x = e.offsetX - startX;
+                overlay.y = e.offsetY - startY;
+                renderEditor();
             } else if (isDrawing) {
                 photoCtx.putImageData(snapshot, 0, 0);
-                photoCtx.lineWidth = 5; photoCtx.strokeStyle = "red"; photoCtx.lineCap = "round";
-                photoCtx.beginPath(); photoCtx.moveTo(startX, startY); photoCtx.lineTo(e.offsetX, e.offsetY); photoCtx.stroke();
+                drawShape(startX, startY, e.offsetX, e.offsetY);
             }
         };
-        photoCanvas.onmouseup = () => { isDrawing = false; overlay.isDragging = false; };
+
+        photoCanvas.onmouseup = () => {
+            isDrawing = false;
+            overlay.isDragging = false;
+        };
 
         // Touch Events
         photoCanvas.ontouchstart = e => {
             const r = photoCanvas.getBoundingClientRect();
-            const tx = e.touches[0].clientX - r.left; const ty = e.touches[0].clientY - r.top;
+            const tx = e.touches[0].clientX - r.left;
+            const ty = e.touches[0].clientY - r.top;
             if (overlay.active) {
-                overlay.isDragging = true; startX = tx - overlay.x; startY = ty - overlay.y;
+                overlay.isDragging = true;
+                startX = tx - overlay.x;
+                startY = ty - overlay.y;
             } else {
-                isDrawing = true; startX = tx; startY = ty; photoCtx.beginPath(); snapshot = photoCtx.getImageData(0, 0, photoCanvas.width, photoCanvas.height);
+                // Si es texto, dibujarlo inmediatamente
+                if (drawTool === 'text') {
+                    drawTextOnCanvas(tx, ty);
+                } else {
+                    isDrawing = true;
+                    startX = tx;
+                    startY = ty;
+                    snapshot = photoCtx.getImageData(0, 0, photoCanvas.width, photoCanvas.height);
+                }
             }
         };
+
         photoCanvas.ontouchmove = e => {
             e.preventDefault();
             const r = photoCanvas.getBoundingClientRect();
-            const tx = e.touches[0].clientX - r.left; const ty = e.touches[0].clientY - r.top;
+            const tx = e.touches[0].clientX - r.left;
+            const ty = e.touches[0].clientY - r.top;
             if (overlay.active && overlay.isDragging) {
-                overlay.x = tx - startX; overlay.y = ty - startY; renderEditor();
+                overlay.x = tx - startX;
+                overlay.y = ty - startY;
+                renderEditor();
             } else if (isDrawing) {
                 photoCtx.putImageData(snapshot, 0, 0);
-                photoCtx.lineWidth = 5; photoCtx.strokeStyle = "red"; photoCtx.lineCap = "round";
-                photoCtx.beginPath(); photoCtx.moveTo(startX, startY); photoCtx.lineTo(tx, ty); photoCtx.stroke();
+                drawShape(startX, startY, tx, ty);
             }
         };
-        photoCanvas.ontouchend = () => { isDrawing = false; overlay.isDragging = false; };
+
+        photoCanvas.ontouchend = () => {
+            isDrawing = false;
+            overlay.isDragging = false;
+        };
 
         function clearDraw() { imgObj.src = imgObj.src; setTimeout(renderEditor, 50); } // Reset to last saved state
         function savePhoto() { if (!photoCanvas.width) return; savedPhotos.push(photoCanvas.toDataURL('image/jpeg', 0.6)); const i = document.createElement('img'); i.src = savedPhotos[savedPhotos.length - 1]; i.className = 'thumb'; document.getElementById('gallery-grid').appendChild(i); document.getElementById('photo-count').innerText = savedPhotos.length; }
