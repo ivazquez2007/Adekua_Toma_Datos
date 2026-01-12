@@ -2794,15 +2794,25 @@
             if (overlay.active && overlay.img) {
                 // Usar elemento img con CSS 3D transforms
                 const s = overlay.scale;
-                const w = overlay.img.width * s;
-                const h = overlay.img.height * s;
+                const overlayW = overlay.img.width * s;
+                const overlayH = overlay.img.height * s;
+
+                // IMPORTANTE: Convertir coordenadas del espacio interno del canvas
+                // al espacio visual CSS del canvas
+                const scaleX = photoCanvas.clientWidth / photoCanvas.width;
+                const scaleY = photoCanvas.clientHeight / photoCanvas.height;
+
+                const visualX = overlay.x * scaleX;
+                const visualY = overlay.y * scaleY;
+                const visualW = overlayW * scaleX;
+                const visualH = overlayH * scaleY;
 
                 overlay3D.src = overlay.img.src;
                 overlay3D.style.display = 'block';
-                overlay3D.style.width = w + 'px';
-                overlay3D.style.height = h + 'px';
-                overlay3D.style.left = overlay.x + 'px';
-                overlay3D.style.top = overlay.y + 'px';
+                overlay3D.style.width = visualW + 'px';
+                overlay3D.style.height = visualH + 'px';
+                overlay3D.style.left = visualX + 'px';
+                overlay3D.style.top = visualY + 'px';
 
                 // Aplicar transformación 3D con perspectiva
                 const transform = `
@@ -2895,8 +2905,13 @@
         photoCanvas.onmousedown = e => {
             if (overlay.active) {
                 overlay.isDragging = true;
-                startX = e.offsetX - overlay.x;
-                startY = e.offsetY - overlay.y;
+                // Convertir de espacio visual a espacio interno del canvas
+                const scaleX = photoCanvas.width / photoCanvas.clientWidth;
+                const scaleY = photoCanvas.height / photoCanvas.clientHeight;
+                const internalX = e.offsetX * scaleX;
+                const internalY = e.offsetY * scaleY;
+                startX = internalX - overlay.x;
+                startY = internalY - overlay.y;
             } else {
                 // Si es texto, dibujarlo inmediatamente
                 if (drawTool === 'text') {
@@ -2912,8 +2927,13 @@
 
         photoCanvas.onmousemove = e => {
             if (overlay.active && overlay.isDragging) {
-                overlay.x = e.offsetX - startX;
-                overlay.y = e.offsetY - startY;
+                // Convertir de espacio visual a espacio interno del canvas
+                const scaleX = photoCanvas.width / photoCanvas.clientWidth;
+                const scaleY = photoCanvas.height / photoCanvas.clientHeight;
+                const internalX = e.offsetX * scaleX;
+                const internalY = e.offsetY * scaleY;
+                overlay.x = internalX - startX;
+                overlay.y = internalY - startY;
                 renderEditor();
             } else if (isDrawing) {
                 photoCtx.putImageData(snapshot, 0, 0);
@@ -2933,8 +2953,13 @@
             const ty = e.touches[0].clientY - r.top;
             if (overlay.active) {
                 overlay.isDragging = true;
-                startX = tx - overlay.x;
-                startY = ty - overlay.y;
+                // Convertir de espacio visual a espacio interno del canvas
+                const scaleX = photoCanvas.width / photoCanvas.clientWidth;
+                const scaleY = photoCanvas.height / photoCanvas.clientHeight;
+                const internalX = tx * scaleX;
+                const internalY = ty * scaleY;
+                startX = internalX - overlay.x;
+                startY = internalY - overlay.y;
             } else {
                 // Si es texto, dibujarlo inmediatamente
                 if (drawTool === 'text') {
@@ -2954,8 +2979,13 @@
             const tx = e.touches[0].clientX - r.left;
             const ty = e.touches[0].clientY - r.top;
             if (overlay.active && overlay.isDragging) {
-                overlay.x = tx - startX;
-                overlay.y = ty - startY;
+                // Convertir de espacio visual a espacio interno del canvas
+                const scaleX = photoCanvas.width / photoCanvas.clientWidth;
+                const scaleY = photoCanvas.height / photoCanvas.clientHeight;
+                const internalX = tx * scaleX;
+                const internalY = ty * scaleY;
+                overlay.x = internalX - startX;
+                overlay.y = internalY - startY;
                 renderEditor();
             } else if (isDrawing) {
                 photoCtx.putImageData(snapshot, 0, 0);
