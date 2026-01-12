@@ -2849,6 +2849,11 @@
                 overlay3D.style.left = visualX + 'px';
                 overlay3D.style.top = visualY + 'px';
 
+                // 🔴 DEBUG VISUAL: Añadir borde rojo y fondo para ver el overlay
+                overlay3D.style.border = '3px solid red';
+                overlay3D.style.backgroundColor = 'rgba(255, 255, 0, 0.3)'; // Fondo amarillo semi-transparente
+                overlay3D.style.boxShadow = '0 0 10px red';
+
                 console.log('🟡 DEBUG renderEditor: overlay-3d.style.display =', overlay3D.style.display);
                 console.log('🟡 DEBUG renderEditor: overlay-3d.style.left =', overlay3D.style.left);
                 console.log('🟡 DEBUG renderEditor: overlay-3d.style.top =', overlay3D.style.top);
@@ -2863,6 +2868,35 @@
                 overlay3D.style.transform = transform;
 
                 console.log('✅ DEBUG renderEditor: Overlay renderizado completamente');
+
+                // 🔴 AÑADIR MARCADORES EN LAS ESQUINAS DEL CANVAS
+                // Limpiar marcadores anteriores
+                document.querySelectorAll('.debug-marker').forEach(m => m.remove());
+
+                const container = document.getElementById('canvas-container');
+                const addMarker = (text, x, y) => {
+                    const marker = document.createElement('div');
+                    marker.className = 'debug-marker';
+                    marker.innerText = text;
+                    marker.style.position = 'absolute';
+                    marker.style.left = x + 'px';
+                    marker.style.top = y + 'px';
+                    marker.style.background = 'red';
+                    marker.style.color = 'white';
+                    marker.style.padding = '2px 5px';
+                    marker.style.fontSize = '10px';
+                    marker.style.fontWeight = 'bold';
+                    marker.style.zIndex = '10000';
+                    marker.style.pointerEvents = 'none';
+                    container.appendChild(marker);
+                };
+
+                // Marcadores en las 4 esquinas del overlay
+                addMarker('↖ Overlay', visualX, visualY);
+                addMarker('↗', visualX + visualW - 20, visualY);
+                addMarker('↙', visualX, visualY + visualH - 15);
+                addMarker('↘', visualX + visualW - 20, visualY + visualH - 15);
+
             } else {
                 overlay3D.style.display = 'none';
                 console.log('⚫ DEBUG renderEditor: Overlay OCULTO (active=' + overlay.active + ')');
