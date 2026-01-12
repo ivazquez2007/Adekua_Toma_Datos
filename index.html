@@ -1052,7 +1052,7 @@
                 <button class="btn-full" style="background:#555; color:white; margin-bottom:10px;"
                     onclick="document.getElementById('cam-input').click()">📷 Tomar Foto</button>
 
-                <div id="canvas-container" style="position:relative; overflow:visible;">
+                <div id="canvas-container" style="position:relative; overflow:hidden; border:1px solid #ccc;">
                     <canvas id="editor"></canvas>
                     <!-- 3D Overlay Element -->
                     <img id="overlay-3d"
@@ -2818,29 +2818,21 @@
             }
 
             const overlay3D = document.getElementById('overlay-3d');
-            console.log('🟡 DEBUG renderEditor: overlay.active =', overlay.active);
 
             if (overlay.active && overlay.img) {
-                console.log('🟡 DEBUG renderEditor: Renderizando overlay...');
-
                 // Usar elemento img con CSS 3D transforms
                 const s = overlay.scale;
                 const overlayW = overlay.img.width * s;
                 const overlayH = overlay.img.height * s;
 
-                // IMPORTANTE: Convertir coordenadas del espacio interno del canvas
-                // al espacio visual CSS del canvas
+                // Convertir coordenadas del espacio interno del canvas al espacio visual CSS
                 const scaleX = photoCanvas.clientWidth / photoCanvas.width;
                 const scaleY = photoCanvas.clientHeight / photoCanvas.height;
-
-                console.log('🟡 DEBUG renderEditor: scaleX =', scaleX, 'scaleY =', scaleY);
 
                 const visualX = overlay.x * scaleX;
                 const visualY = overlay.y * scaleY;
                 const visualW = overlayW * scaleX;
                 const visualH = overlayH * scaleY;
-
-                console.log('🟡 DEBUG renderEditor: Visual coords:', 'x=' + Math.round(visualX), 'y=' + Math.round(visualY), 'w=' + Math.round(visualW), 'h=' + Math.round(visualH));
 
                 overlay3D.src = overlay.img.src;
                 overlay3D.style.display = 'block';
@@ -2848,29 +2840,7 @@
                 overlay3D.style.height = visualH + 'px';
                 overlay3D.style.left = visualX + 'px';
                 overlay3D.style.top = visualY + 'px';
-                overlay3D.style.zIndex = '99999'; // FORZAR z-index muy alto
-
-                // 🔴 DEBUG VISUAL: Añadir borde rojo y fondo para ver el overlay
-                overlay3D.style.border = '3px solid red';
-                overlay3D.style.backgroundColor = 'rgba(255, 255, 0, 0.3)'; // Fondo amarillo semi-transparente
-                overlay3D.style.boxShadow = '0 0 10px red';
-
-                console.log('🟡 DEBUG renderEditor: overlay-3d.style.display =', overlay3D.style.display);
-                console.log('🟡 DEBUG renderEditor: overlay-3d.style.left =', overlay3D.style.left);
-                console.log('🟡 DEBUG renderEditor: overlay-3d.style.top =', overlay3D.style.top);
-                console.log('🟡 DEBUG renderEditor: overlay-3d.style.zIndex =', overlay3D.style.zIndex);
-
-                // LOG getBoundingClientRect para ver si el elemento está en el viewport
-                const rect = overlay3D.getBoundingClientRect();
-                console.log('📐 DEBUG: overlay-3d getBoundingClientRect:', {
-                    top: rect.top,
-                    left: rect.left,
-                    width: rect.width,
-                    height: rect.height,
-                    bottom: rect.bottom,
-                    right: rect.right,
-                    visible: rect.width > 0 && rect.height > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth
-                });
+                overlay3D.style.zIndex = '99999';
 
                 // Aplicar transformación 3D con perspectiva
                 const transform = `
@@ -2881,39 +2851,8 @@
                 `;
                 overlay3D.style.transform = transform;
 
-                console.log('✅ DEBUG renderEditor: Overlay renderizado completamente');
-
-                // 🔴 AÑADIR MARCADORES EN LAS ESQUINAS DEL CANVAS
-                // Limpiar marcadores anteriores
-                document.querySelectorAll('.debug-marker').forEach(m => m.remove());
-
-                const container = document.getElementById('canvas-container');
-                const addMarker = (text, x, y) => {
-                    const marker = document.createElement('div');
-                    marker.className = 'debug-marker';
-                    marker.innerText = text;
-                    marker.style.position = 'absolute';
-                    marker.style.left = x + 'px';
-                    marker.style.top = y + 'px';
-                    marker.style.background = 'red';
-                    marker.style.color = 'white';
-                    marker.style.padding = '2px 5px';
-                    marker.style.fontSize = '10px';
-                    marker.style.fontWeight = 'bold';
-                    marker.style.zIndex = '10000';
-                    marker.style.pointerEvents = 'none';
-                    container.appendChild(marker);
-                };
-
-                // Marcadores en las 4 esquinas del overlay
-                addMarker('↖ Overlay', visualX, visualY);
-                addMarker('↗', visualX + visualW - 20, visualY);
-                addMarker('↙', visualX, visualY + visualH - 15);
-                addMarker('↘', visualX + visualW - 20, visualY + visualH - 15);
-
             } else {
                 overlay3D.style.display = 'none';
-                console.log('⚫ DEBUG renderEditor: Overlay OCULTO (active=' + overlay.active + ')');
             }
         }
 
