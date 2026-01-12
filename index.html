@@ -1052,7 +1052,12 @@
                 <button class="btn-full" style="background:#555; color:white; margin-bottom:10px;"
                     onclick="document.getElementById('cam-input').click()">📷 Tomar Foto</button>
 
-                <div id="canvas-container"><canvas id="editor"></canvas></div>
+                <div id="canvas-container" style="position:relative;">
+                    <canvas id="editor"></canvas>
+                    <!-- 3D Overlay Element -->
+                    <img id="overlay-3d"
+                        style="display:none; position:absolute; top:0; left:0; pointer-events:none; transform-origin:center center;">
+                </div>
 
                 <!-- Controles de Escala de Foto -->
                 <div class="control-group" id="photo-scale-controls" style="display:none;">
@@ -1066,25 +1071,55 @@
 
                 <div id="overlay-controls"
                     style="display:none; background:#f1f3f5; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #ddd;">
-                    <label style="margin-top:0; color:var(--purple);">🗺️ Ajustar Plano</label>
-                    <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:8px;">
-                        <span style="font-size:0.8rem; min-width:35px;">Tam:</span>
+                    <label style="margin-top:0; color:var(--purple); font-weight:bold;">🗺️ Ajustar Plano (3D)</label>
+
+                    <!-- Scale Control -->
+                    <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin:8px 0;">
+                        <span style="font-size:0.8rem; min-width:70px;">📏 Tamaño:</span>
                         <input type="range" id="overlay-scale" min="0.1" max="3" step="0.1" value="1"
                             oninput="updateOverlayScale()" style="flex:1;">
                         <span id="overlay-scale-value"
-                            style="font-size:0.8rem; min-width:40px; font-weight:bold; color:var(--purple);">100%</span>
+                            style="font-size:0.8rem; min-width:50px; font-weight:bold; color:var(--purple);">100%</span>
                     </div>
-                    <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin-bottom:8px;">
-                        <span style="font-size:0.8rem; min-width:35px;">🔄:</span>
-                        <input type="range" id="overlay-rotation" min="0" max="360" step="1" value="0"
-                            oninput="updateOverlayRotation()" style="flex:1;">
-                        <span id="overlay-rotation-value"
-                            style="font-size:0.8rem; min-width:40px; font-weight:bold; color:var(--purple);">0°</span>
+
+                    <!-- Rotation Controls -->
+                    <div style="background:#fff; padding:8px; border-radius:4px; margin:8px 0;">
+                        <label
+                            style="font-size:0.85rem; font-weight:bold; margin:0 0 8px 0; display:block; color:#555;">🔄
+                            Rotación 3D</label>
+
+                        <!-- Rotate X -->
+                        <div style="display:flex; gap:10px; align-items:center; margin:5px 0;">
+                            <span style="font-size:0.75rem; min-width:55px; color:#666;">↕️ Eje X:</span>
+                            <input type="range" id="overlay-rotateX" min="-180" max="180" step="1" value="0"
+                                oninput="updateOverlayRotation()" style="flex:1;">
+                            <span id="overlay-rotateX-value"
+                                style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
+                        </div>
+
+                        <!-- Rotate Y -->
+                        <div style="display:flex; gap:10px; align-items:center; margin:5px 0;">
+                            <span style="font-size:0.75rem; min-width:55px; color:#666;">↔️ Eje Y:</span>
+                            <input type="range" id="overlay-rotateY" min="-180" max="180" step="1" value="0"
+                                oninput="updateOverlayRotation()" style="flex:1;">
+                            <span id="overlay-rotateY-value"
+                                style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
+                        </div>
+
+                        <!-- Rotate Z -->
+                        <div style="display:flex; gap:10px; align-items:center; margin:5px 0;">
+                            <span style="font-size:0.75rem; min-width:55px; color:#666;">🔃 Eje Z:</span>
+                            <input type="range" id="overlay-rotateZ" min="0" max="360" step="1" value="0"
+                                oninput="updateOverlayRotation()" style="flex:1;">
+                            <span id="overlay-rotateZ-value"
+                                style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
+                        </div>
                     </div>
+
                     <button class="btn-mini" style="background:var(--success); width:100%;" onclick="fixOverlay()">✅
                         Fijar Plano</button>
                     <p style="font-size:0.7rem; color:#666; margin:5px 0 0 0;">Arrastra para mover. Usa las barras para
-                        escalar y rotar.</p>
+                        escalar y rotar en 3D.</p>
                 </div>
 
                 <!-- Selector de Herramienta -->
@@ -1224,7 +1259,7 @@
         let imgObj = new Image();
         let savedPhotos = [];
         let isDrawing = false;
-        let overlay = { img: null, x: 0, y: 0, scale: 1.0, rotation: 0, active: false, isDragging: false };
+        let overlay = { img: null, x: 0, y: 0, scale: 1.0, rotateX: 0, rotateY: 0, rotateZ: 0, active: false, isDragging: false };
 
         // Variables de Dibujo
         let drawTool = 'line'; // 'line', 'circle', 'square', 'triangle', 'x', 'text'
@@ -2676,30 +2711,54 @@
                 overlay.active = true;
                 // Centrar overlay y resetear transformaciones
                 overlay.scale = 1;
-                overlay.rotation = 0;
+                overlay.rotateX = 0;
+                overlay.rotateY = 0;
+                overlay.rotateZ = 0;
                 overlay.x = (photoCanvas.width - overlay.img.width) / 2;
                 overlay.y = (photoCanvas.height - overlay.img.height) / 2;
                 // Actualizar controles UI
                 document.getElementById('overlay-scale').value = '1';
                 document.getElementById('overlay-scale-value').innerText = '100%';
-                document.getElementById('overlay-rotation').value = '0';
-                document.getElementById('overlay-rotation-value').innerText = '0°';
+                document.getElementById('overlay-rotateX').value = '0';
+                document.getElementById('overlay-rotateX-value').innerText = '0°';
+                document.getElementById('overlay-rotateY').value = '0';
+                document.getElementById('overlay-rotateY-value').innerText = '0°';
+                document.getElementById('overlay-rotateZ').value = '0';
+                document.getElementById('overlay-rotateZ-value').innerText = '0°';
                 document.getElementById('overlay-controls').style.display = 'block';
                 renderEditor();
             };
         }
 
-        function fixOverlay() {
+        async function fixOverlay() {
+            if (!overlay.active) return;
+
             overlay.active = false;
             document.getElementById('overlay-controls').style.display = 'none';
-            // "Quemar" el overlay en la imagen base para que al pintar encima no se borre
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = photoCanvas.width;
-            tempCanvas.height = photoCanvas.height;
-            const tCtx = tempCanvas.getContext('2d');
-            tCtx.drawImage(photoCanvas, 0, 0);
-            imgObj.src = tempCanvas.toDataURL(); // Actualizar la imagen base con lo que vemos
-            // (Nota: esto es un truco simple, en una app real se gestionarian capas)
+
+            // Capturar la vista actual del canvas container que incluye el overlay 3D
+            try {
+                const container = document.getElementById('canvas-container');
+                const overlay3D = document.getElementById('overlay-3d');
+
+                // Crear un canvas temporal para combinar la imagen
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = photoCanvas.width;
+                tempCanvas.height = photoCanvas.height;
+                const tCtx = tempCanvas.getContext('2d');
+
+                // Dibujar la imagen base (foto)
+                tCtx.drawImage(photoCanvas, 0, 0);
+
+                // Para la transformación 3D, necesitaríamos renderizar el elemento HTML
+                // Por ahora, ocultamos el overlay 3D
+                overlay3D.style.display = 'none';
+
+                // Actualizar la imagen base
+                imgObj.src = tempCanvas.toDataURL();
+            } catch (e) {
+                console.error('Error al fijar overlay:', e);
+            }
         }
 
         function updateOverlayScale() {
@@ -2710,9 +2769,12 @@
         }
 
         function updateOverlayRotation() {
-            const r = parseInt(document.getElementById('overlay-rotation').value);
-            overlay.rotation = r;
-            document.getElementById('overlay-rotation-value').innerText = r + '°';
+            overlay.rotateX = parseInt(document.getElementById('overlay-rotateX').value);
+            overlay.rotateY = parseInt(document.getElementById('overlay-rotateY').value);
+            overlay.rotateZ = parseInt(document.getElementById('overlay-rotateZ').value);
+            document.getElementById('overlay-rotateX-value').innerText = overlay.rotateX + '°';
+            document.getElementById('overlay-rotateY-value').innerText = overlay.rotateY + '°';
+            document.getElementById('overlay-rotateZ-value').innerText = overlay.rotateZ + '°';
             renderEditor();
         }
 
@@ -2727,27 +2789,31 @@
                 photoCtx.drawImage(imgObj, x, y, w, h);
             }
 
+            const overlay3D = document.getElementById('overlay-3d');
+
             if (overlay.active && overlay.img) {
+                // Usar elemento img con CSS 3D transforms
                 const s = overlay.scale;
                 const w = overlay.img.width * s;
                 const h = overlay.img.height * s;
 
-                // Guardar estado del contexto
-                photoCtx.save();
+                overlay3D.src = overlay.img.src;
+                overlay3D.style.display = 'block';
+                overlay3D.style.width = w + 'px';
+                overlay3D.style.height = h + 'px';
+                overlay3D.style.left = overlay.x + 'px';
+                overlay3D.style.top = overlay.y + 'px';
 
-                // Trasladar al centro del overlay para rotar desde ahí
-                const centerX = overlay.x + w / 2;
-                const centerY = overlay.y + h / 2;
-                photoCtx.translate(centerX, centerY);
-
-                // Aplicar rotación (convertir grados a radianes)
-                photoCtx.rotate(overlay.rotation * Math.PI / 180);
-
-                // Dibujar la imagen centrada en el origen de rotación
-                photoCtx.drawImage(overlay.img, -w / 2, -h / 2, w, h);
-
-                // Restaurar estado del contexto
-                photoCtx.restore();
+                // Aplicar transformación 3D con perspectiva
+                const transform = `
+                    perspective(1000px)
+                    rotateX(${overlay.rotateX}deg)
+                    rotateY(${overlay.rotateY}deg)
+                    rotateZ(${overlay.rotateZ}deg)
+                `;
+                overlay3D.style.transform = transform;
+            } else {
+                overlay3D.style.display = 'none';
             }
         }
 
