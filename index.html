@@ -2963,9 +2963,9 @@
                 try {
                     const projectData = JSON.parse(e.target.result);
 
-                    // Validar versión
+                    // Advertir si falta versión pero permitir continuar
                     if (!projectData.version) {
-                        throw new Error('Archivo JSON inválido: falta campo version');
+                        console.warn('Archivo JSON sin campo version - podría ser de una versión anterior');
                     }
 
                     // Confirmar antes de sobrescribir
