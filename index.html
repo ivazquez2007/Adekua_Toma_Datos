@@ -3005,9 +3005,19 @@
 
                     // Cargar tramos
                     if (projectData.tramos) {
-                        tramos = projectData.tramos;
-                        customPostSelections = projectData.customPostSelections || {};
-                        drawPreview();
+                        try {
+                            if (typeof tramos === 'undefined') {
+                                console.error('ERROR CRÍTICO: La variable tramos no está definida globalmente');
+                                alert('Error interno: variable tramos no definida. Por favor, recarga la página con Ctrl+Shift+R');
+                                return;
+                            }
+                            tramos = projectData.tramos;
+                            customPostSelections = projectData.customPostSelections || {};
+                            drawPreview();
+                        } catch (err) {
+                            console.error('Error al cargar tramos:', err);
+                            alert('Error al cargar los tramos: ' + err.message);
+                        }
                     }
 
                     // Cargar fotos guardadas
