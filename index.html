@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADEKUA [vMVP-4] (Superposición + BOM)</title>
+    <title>ADEKUA [vMVP-5] (Superposición + BOM)</title>
     <!-- SheetJS Library for Excel Export -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -1135,18 +1135,18 @@
                             style="font-size:0.85rem; font-weight:bold; margin:0 0 8px 0; display:block; color:#555;">🔄
                             Rotación 3D</label>
 
-                        <!-- Rotate X -->
-                        <div style="display:flex; gap:10px; align-items:center; margin:5px 0;">
-                            <span style="font-size:0.75rem; min-width:55px; color:#666;">↕️ Eje X:</span>
+                        <!-- Rotate X (HIDDEN: Not supported in 2D Fix) -->
+                        <div style="display:none; gap:10px; align-items:center; margin:5px 0;">
+                            <span style="font-size:0.75rem; min-width:55px; color:#666;">↔️ Eje X:</span>
                             <input type="range" id="overlay-rotateX" min="-180" max="180" step="1" value="0"
                                 oninput="updateOverlayRotation()" style="flex:1;">
                             <span id="overlay-rotateX-value"
                                 style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
                         </div>
 
-                        <!-- Rotate Y -->
-                        <div style="display:flex; gap:10px; align-items:center; margin:5px 0;">
-                            <span style="font-size:0.75rem; min-width:55px; color:#666;">↔️ Eje Y:</span>
+                        <!-- Rotate Y (HIDDEN: Not supported in 2D Fix) -->
+                        <div style="display:none; gap:10px; align-items:center; margin:5px 0;">
+                            <span style="font-size:0.75rem; min-width:55px; color:#666;">↕️ Eje Y:</span>
                             <input type="range" id="overlay-rotateY" min="-180" max="180" step="1" value="0"
                                 oninput="updateOverlayRotation()" style="flex:1;">
                             <span id="overlay-rotateY-value"
