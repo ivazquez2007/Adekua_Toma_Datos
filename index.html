@@ -2842,6 +2842,11 @@
                 overlay3D.style.top = visualY + 'px';
                 overlay3D.style.zIndex = '99999';
 
+                // Fondo semi-transparente para que el plano sea visible sobre la foto
+                overlay3D.style.backgroundColor = 'rgba(255, 255, 255, 0.7)'; // Blanco 70% opacidad
+                overlay3D.style.border = '2px solid #333'; // Borde para delimitar el área
+                overlay3D.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'; // Sombra sutil
+
                 // Aplicar transformación 3D con perspectiva
                 const transform = `
                     perspective(1000px)
