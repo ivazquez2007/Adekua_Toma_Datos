@@ -2791,26 +2791,27 @@
         async function fixOverlay() {
             if (!overlay.active) return;
 
-            // Crear un canvas temporal para combinar la imagen
+            // Crear un canvas temporal del mismo tamaño que el photoCanvas
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = photoCanvas.width;
             tempCanvas.height = photoCanvas.height;
             const tCtx = tempCanvas.getContext('2d');
 
-            // Dibujar la imagen base (foto actual)
-            tCtx.drawImage(photoCanvas, 0, 0);
+            // Dibujar primero la foto base (respetando photoScale)
+            const w = photoCanvas.width * photoScale;
+            const h = photoCanvas.height * photoScale;
+            const photoX = (photoCanvas.width - w) / 2;
+            const photoY = (photoCanvas.height - h) / 2;
+            tCtx.drawImage(imgObj, photoX, photoY, w, h);
 
-            // Dibujar el overlay sobre la foto
+            // Dibujar el overlay encima en su posición exacta
             if (overlay.img) {
                 tCtx.save();
 
-                // Calcular las dimensiones finales del overlay
                 const finalW = overlay.img.width * overlay.scale;
                 const finalH = overlay.img.height * overlay.scale;
 
-                // Las transformaciones 3D no se pueden replicar en canvas 2D directamente
-                // Por ahora, dibujamos el overlay sin las rotaciones 3D
-                // Solo aplicamos posición y escala
+                // Dibujar el overlay en su posición (ya está en coordenadas del canvas interno)
                 tCtx.drawImage(overlay.img, overlay.x, overlay.y, finalW, finalH);
 
                 tCtx.restore();
@@ -2825,7 +2826,7 @@
             document.getElementById('overlay-controls').style.display = 'none';
             document.getElementById('overlay-3d').style.display = 'none';
 
-            // Redibujar el editor con la nueva imagen
+            // Redibujar el editor con la nueva imagen compuesta
             renderEditor();
         }
 
@@ -2930,6 +2931,10 @@
 
         // --- JSON IMPORT/EXPORT ---
         function exportProjectToJSON() {
+            // Capturar la imagen del plano generado
+            const geoCanvas = document.getElementById('geo-canvas');
+            const planImage = geoCanvas ? geoCanvas.toDataURL() : null;
+
             const projectData = {
                 version: "1.0",
                 timestamp: new Date().toISOString(),
@@ -2941,9 +2946,13 @@
                 systemConfig: {
                     currentSystem: currentSystem
                 },
-                tramos: tramos,
+                planData: {
+                    tramos: tramos,
+                    planImage: planImage  // Imagen del plano en base64
+                },
                 customPostSelections: customPostSelections,
-                savedPhotos: savedPhotos  // Incluye las fotos en base64
+                savedPhotos: savedPhotos,  // Fotos guardadas en base64
+                globalCalculatedPosts: globalCalculatedPosts  // Datos calculados de postes
             };
 
             //Crear blob y descargar
@@ -3003,16 +3012,18 @@
                         setSystem(projectData.systemConfig.currentSystem);
                     }
 
-                    // Cargar tramos
-                    if (projectData.tramos) {
+                    // Cargar tramos (soporta formato antiguo y nuevo)
+                    let tramosData = projectData.tramos || projectData.planData?.tramos;
+                    if (tramosData) {
                         try {
                             if (typeof tramos === 'undefined') {
                                 console.error('ERROR CRÍTICO: La variable tramos no está definida globalmente');
                                 alert('Error interno: variable tramos no definida. Por favor, recarga la página con Ctrl+Shift+R');
                                 return;
                             }
-                            tramos = projectData.tramos;
+                            tramos = tramosData;
                             customPostSelections = projectData.customPostSelections || {};
+                            globalCalculatedPosts = projectData.globalCalculatedPosts || [];
                             drawPreview();
                         } catch (err) {
                             console.error('Error al cargar tramos:', err);
