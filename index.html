@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADEKUA [vMVP-5] (Superposición + BOM)</title>
+    <title>ADEKUA [vMVP-6] (Superposición + BOM)</title>
     <!-- SheetJS Library for Excel Export -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -3025,14 +3025,14 @@
                 overlay3D.style.top = visualY + 'px';
                 overlay3D.style.zIndex = '99999';
 
-                // Aplicar transformación 3D con perspectiva
+                // Aplicar transformación 2D (Para coincidir con fixOverlay)
                 const transform = `
-                    perspective(1000px)
-                    rotateX(${overlay.rotateX}deg)
-                    rotateY(${overlay.rotateY}deg)
+                    translate3d(0,0,0)
                     rotateZ(${overlay.rotateZ}deg)
                 `;
+
                 overlay3D.style.transform = transform;
+                overlay3D.style.transformOrigin = '0 0';
 
             } else {
                 overlay3D.style.display = 'none';
