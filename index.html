@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADEKUA [vMVP-2] (Superposición + BOM)</title>
+    <title>ADEKUA [vMVP-3] (Superposición + BOM)</title>
     <!-- SheetJS Library for Excel Export -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -3071,19 +3071,24 @@
             img.src = previousState;
         }
 
-        // --- JSON IMPORT/EXPORT (MVP) ---
+        // --- JSON IMPORT/EXPORT (FULL) ---
         function exportProjectToJSON() {
             const projectData = {
                 client: document.getElementById('g-client')?.value || '',
                 site: document.getElementById('g-site')?.value || '',
-                date: document.getElementById('g-date')?.value || ''
+                date: document.getElementById('g-date')?.value || '',
+                // Full Project Data
+                system: currentSystem,
+                tramos: tramos,
+                customPostSelections: customPostSelections,
+                savedPhotos: savedPhotos
             };
 
             const jsonString = JSON.stringify(projectData, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
 
-            const filename = `MVP_${(projectData.client || 'cliente').replace(/\s+/g, '_')}_${projectData.date || 'fecha'}.json`;
+            const filename = `ADEKUA_${(projectData.client || 'cliente').replace(/\s+/g, '_')}_${projectData.date || 'fecha'}.json`;
 
             const a = document.createElement('a');
             a.href = url;
@@ -3093,7 +3098,7 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            alert(`✅ Datos guardados (Solo Cliente/Obra/Fecha):\n${filename}`);
+            alert(`✅ Proyecto COMPLETO guardado:\n${filename}\n(Incluye Tramos, Fotos y Configuración)`);
         }
 
         function importProjectFromJSON(fileInput) {
@@ -3104,13 +3109,35 @@
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    console.log('📦 JSON Cargado (MVP):', data);
+                    console.log('📦 JSON COMPLETO Cargado:', data);
 
+                    // 1. Basic Data
                     if (document.getElementById('g-client')) document.getElementById('g-client').value = data.client || '';
                     if (document.getElementById('g-site')) document.getElementById('g-site').value = data.site || '';
                     if (document.getElementById('g-date')) document.getElementById('g-date').value = data.date || '';
 
-                    alert('✅ Datos básicos importados correctamente.');
+                    // 2. System Restoration
+                    if (data.system) {
+                        setSystem(data.system);
+                    }
+
+                    // 3. Tramos & Configuration
+                    if (Array.isArray(data.tramos)) {
+                        tramos = data.tramos;
+                        if (data.customPostSelections) customPostSelections = data.customPostSelections;
+
+                        // Force UI Refresh
+                        syncUITramos();
+                        setTimeout(drawPreview, 100);
+                    }
+
+                    // 4. Photos
+                    if (Array.isArray(data.savedPhotos)) {
+                        savedPhotos = data.savedPhotos;
+                        refreshGallery();
+                    }
+
+                    alert('✅ Proyecto COMPLETO importado correctamente.');
                     fileInput.value = '';
 
                 } catch (error) {
