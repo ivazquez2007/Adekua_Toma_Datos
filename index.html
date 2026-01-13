@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADEKUA [vMVP-3] (Superposición + BOM)</title>
+    <title>ADEKUA [vMVP-4] (Superposición + BOM)</title>
     <!-- SheetJS Library for Excel Export -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -3072,7 +3072,69 @@
         }
 
         // --- JSON IMPORT/EXPORT (FULL) ---
+        function captureStateFromDOM() {
+            // Synchronize global tramos array with current UI values
+            const domTramos = [];
+            let currentAngle = 0;
+
+            if (currentSystem === 'barandilla' || currentSystem === 'attika') {
+                document.querySelectorAll('.b-tramo').forEach((el, i) => {
+                    const angleInput = parseFloat(el.querySelector('.b-angle').value) || 0;
+                    const len = parseFloat(el.querySelector('.b-len').value) || 0;
+                    const hasRodapie = el.querySelector('.b-rodapie')?.checked || false;
+
+                    // Reconstruct logic from drawPreview
+                    currentAngle = i === 0 ? angleInput : currentAngle + angleInput;
+
+                    domTramos.push({
+                        len: len,
+                        angle: angleInput, // Store relative angle for restoration
+                        rodapie: hasRodapie
+                    });
+                });
+            } else if (currentSystem === 'sand01' || currentSystem === 'sand02' || currentSystem === 'poste' || currentSystem === 'rail') {
+                document.querySelectorAll('.lv-tramo').forEach((el, i) => {
+                    const isStart = (i === 0);
+                    const startAngle = isStart ? (parseFloat(el.querySelector('.lv-start-angle')?.value) || 0) : 0;
+                    const len = parseFloat(el.querySelector('.lv-len').value) || 0;
+                    const endSelect = el.querySelector('.lv-end');
+                    const endType = endSelect ? endSelect.value : 'nada';
+
+                    let angleRel = 0;
+                    let curveMod = 'standard';
+
+                    if (endType === 'curva') {
+                        angleRel = parseFloat(el.querySelector('.lv-angle')?.value) || 90;
+                        curveMod = el.querySelector('.lv-curve-type')?.value || 'standard';
+                    }
+
+                    // Manual points
+                    const manuallyAdded = [];
+                    el.querySelectorAll('.manual-point-row').forEach(row => {
+                        const d = parseFloat(row.querySelector('.mp-dist').value) || 0;
+                        const t = row.querySelector('.mp-type').value;
+                        if (d > 0) manuallyAdded.push({ dist: d, type: t });
+                    });
+
+                    domTramos.push({
+                        startAngle: startAngle,
+                        len: len,
+                        endType: endType,
+                        angle: angleRel,
+                        curveModel: curveMod,
+                        manual: manuallyAdded
+                    });
+                });
+            }
+            // Update global only if we found something (avoid clearing on empty)
+            if (domTramos.length > 0) {
+                tramos = domTramos;
+            }
+        }
+
         function exportProjectToJSON() {
+            captureStateFromDOM(); // <--- CRITICAL: Sync before export
+
             const projectData = {
                 client: document.getElementById('g-client')?.value || '',
                 site: document.getElementById('g-site')?.value || '',
