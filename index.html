@@ -593,6 +593,25 @@
                 <label>Fecha</label><input type="date" id="g-date">
             </div>
 
+            <!-- Import/Export JSON -->
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h2 style="color: white;">💾 Cargar/Guardar Proyecto</h2>
+                <p style="font-size: 0.85rem; margin: 5px 0 15px 0; opacity: 0.9;">Guarda todos los datos del proyecto
+                    en un archivo JSON (incluye fotos)</p>
+                <input type="file" id="json-import-input" accept=".json" style="display:none;"
+                    onchange="importProjectFromJSON(this)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn-mini" style="background: white; color: #667eea; font-weight: bold;"
+                        onclick="document.getElementById('json-import-input').click()">
+                        📂 Cargar JSON
+                    </button>
+                    <button class="btn-mini" style="background: #4CAF50; color: white; font-weight: bold;"
+                        onclick="exportProjectToJSON()">
+                        💾 Guardar JSON
+                    </button>
+                </div>
+            </div>
+
             <div class="card">
                 <h2>Sistema a Presupuestar</h2>
                 <div class="sys-selector">
@@ -2895,6 +2914,108 @@
                 }
             };
             img.src = previousState;
+        }
+
+        // --- JSON IMPORT/EXPORT ---
+        function exportProjectToJSON() {
+            const projectData = {
+                version: "1.0",
+                timestamp: new Date().toISOString(),
+                clientData: {
+                    cliente: document.getElementById('g-client')?.value || '',
+                    obra: document.getElementById('g-site')?.value || '',
+                    fecha: document.getElementById('g-date')?.value || ''
+                },
+                systemConfig: {
+                    currentSystem: currentSystem
+                },
+                tramos: tramos,
+                customPostSelections: customPostSelections,
+                savedPhotos: savedPhotos  // Incluye las fotos en base64
+            };
+
+            //Crear blob y descargar
+            const jsonString = JSON.stringify(projectData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const fecha = projectData.clientData.fecha || new Date().toISOString().split('T')[0];
+            const cliente = projectData.clientData.cliente || 'proyecto';
+            const filename = `${cliente.replace(/\s+/g, '_')}_${fecha}.json`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert(`✅ Proyecto guardado como:\n${filename}\n\nTamaño: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+        }
+
+        function importProjectFromJSON(fileInput) {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const projectData = JSON.parse(e.target.result);
+
+                    // Validar versión
+                    if (!projectData.version) {
+                        throw new Error('Archivo JSON inválido: falta campo version');
+                    }
+
+                    // Confirmar antes de sobrescribir
+                    if (tramos.length > 0 || savedPhotos.length > 0) {
+                        if (!confirm('¿Deseas reemplazar el proyecto actual con los datos del archivo?\n\nEsto sobrescribirá todos los datos actuales.')) {
+                            fileInput.value = '';  // Reset file input
+                            return;
+                        }
+                    }
+
+                    // Cargar datos del cliente
+                    if (projectData.clientData) {
+                        if (document.getElementById('g-client'))
+                            document.getElementById('g-client').value = projectData.clientData.cliente || '';
+                        if (document.getElementById('g-site'))
+                            document.getElementById('g-site').value = projectData.clientData.obra || '';
+                        if (document.getElementById('g-date'))
+                            document.getElementById('g-date').value = projectData.clientData.fecha || '';
+                    }
+
+                    // Cargar sistema
+                    if (projectData.systemConfig && projectData.systemConfig.currentSystem) {
+                        setSystem(projectData.systemConfig.currentSystem);
+                    }
+
+                    // Cargar tramos
+                    if (projectData.tramos) {
+                        tramos = projectData.tramos;
+                        customPostSelections = projectData.customPostSelections || {};
+                        drawPreview();
+                    }
+
+                    // Cargar fotos guardadas
+                    if (projectData.savedPhotos) {
+                        savedPhotos = projectData.savedPhotos;
+                        refreshGallery();
+                    }
+
+                    alert(`✅ Proyecto cargado exitosamente!\n\nCliente: ${projectData.clientData?.cliente || 'N/A'}\nFecha: ${projectData.clientData?.fecha || 'N/A'}\nTramos: ${tramos.length}\nFotos: ${savedPhotos.length}`);
+
+                    // Reset file input
+                    fileInput.value = '';
+
+                } catch (error) {
+                    alert(`❌ Error al cargar el archivo JSON:\n\n${error.message}\n\nVerifica que el archivo sea válido.`);
+                    console.error('Error importing JSON:', error);
+                    fileInput.value = '';
+                }
+            };
+            reader.readAsText(file);
         }
 
         // --- DRAWING FUNCTIONS ---
