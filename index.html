@@ -1135,6 +1135,11 @@
                         <button class="tool-btn" onclick="setDrawTool('text')">📝 Texto</button>
                     </div>
                 </div>
+                <!-- Botón Deshacer -->
+                <button class="btn-mini" style="background:#ff9800; width:100%; margin-top:8px;"
+                    onclick="undoAnnotation()" id="undo-btn" disabled>
+                    ↶ Deshacer
+                </button>
 
                 <!-- Selector de Color -->
                 <div class="control-group">
@@ -1267,6 +1272,10 @@
         let lineWidth = 5;
         let textSize = 24;
         let photoScale = 1.0;
+
+        // Historial para Deshacer
+        let undoHistory = [];
+        const MAX_UNDO_STEPS = 20; // Límite de 20 pasos
 
         // Draggable Labels State
         let labelOffsets = {}; // { id: { dx, dy } }
@@ -2856,6 +2865,38 @@
             }
         }
 
+        // --- UNDO FUNCTIONALITY ---
+        function saveUndoState() {
+            const state = photoCanvas.toDataURL();
+            undoHistory.push(state);
+
+            // Limitar el historial al máximo de pasos
+            if (undoHistory.length > MAX_UNDO_STEPS) {
+                undoHistory.shift(); // Eliminar el más antiguo
+            }
+
+            // Habilitar el botón de deshacer
+            document.getElementById('undo-btn').disabled = false;
+        }
+
+        function undoAnnotation() {
+            if (undoHistory.length === 0) return;
+
+            // Restaurar el estado anterior
+            const previousState = undoHistory.pop();
+            const img = new Image();
+            img.onload = () => {
+                photoCtx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
+                photoCtx.drawImage(img, 0, 0);
+
+                // Deshabilitar el botón si no hay más historial
+                if (undoHistory.length === 0) {
+                    document.getElementById('undo-btn').disabled = true;
+                }
+            };
+            img.src = previousState;
+        }
+
         // --- DRAWING FUNCTIONS ---
         function drawShape(x1, y1, x2, y2) {
             photoCtx.strokeStyle = drawColor;
@@ -2942,6 +2983,9 @@
                 startX = internalX - overlay.x;
                 startY = internalY - overlay.y;
             } else {
+                // Guardar estado antes de dibujar
+                saveUndoState();
+
                 // Si es texto, dibujarlo inmediatamente
                 if (drawTool === 'text') {
                     drawTextOnCanvas(e.offsetX, e.offsetY);
@@ -2990,6 +3034,9 @@
                 startX = internalX - overlay.x;
                 startY = internalY - overlay.y;
             } else {
+                // Guardar estado antes de dibujar
+                saveUndoState();
+
                 // Si es texto, dibujarlo inmediatamente
                 if (drawTool === 'text') {
                     drawTextOnCanvas(tx, ty);
