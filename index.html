@@ -2789,32 +2789,42 @@
         async function fixOverlay() {
             if (!overlay.active) return;
 
-            overlay.active = false;
-            document.getElementById('overlay-controls').style.display = 'none';
+            // Crear un canvas temporal para combinar la imagen
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = photoCanvas.width;
+            tempCanvas.height = photoCanvas.height;
+            const tCtx = tempCanvas.getContext('2d');
 
-            // Capturar la vista actual del canvas container que incluye el overlay 3D
-            try {
-                const container = document.getElementById('canvas-container');
-                const overlay3D = document.getElementById('overlay-3d');
+            // Dibujar la imagen base (foto actual)
+            tCtx.drawImage(photoCanvas, 0, 0);
 
-                // Crear un canvas temporal para combinar la imagen
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = photoCanvas.width;
-                tempCanvas.height = photoCanvas.height;
-                const tCtx = tempCanvas.getContext('2d');
+            // Dibujar el overlay sobre la foto
+            if (overlay.img) {
+                tCtx.save();
 
-                // Dibujar la imagen base (foto)
-                tCtx.drawImage(photoCanvas, 0, 0);
+                // Calcular las dimensiones finales del overlay
+                const finalW = overlay.img.width * overlay.scale;
+                const finalH = overlay.img.height * overlay.scale;
 
-                // Para la transformación 3D, necesitaríamos renderizar el elemento HTML
-                // Por ahora, ocultamos el overlay 3D
-                overlay3D.style.display = 'none';
+                // Las transformaciones 3D no se pueden replicar en canvas 2D directamente
+                // Por ahora, dibujamos el overlay sin las rotaciones 3D
+                // Solo aplicamos posición y escala
+                tCtx.drawImage(overlay.img, overlay.x, overlay.y, finalW, finalH);
 
-                // Actualizar la imagen base
-                imgObj.src = tempCanvas.toDataURL();
-            } catch (e) {
-                console.error('Error al fijar overlay:', e);
+                tCtx.restore();
             }
+
+            // Actualizar la imagen base con el overlay "quemado"
+            imgObj.src = tempCanvas.toDataURL();
+
+            // Desactivar el overlay
+            overlay.active = false;
+            overlay.img = null;
+            document.getElementById('overlay-controls').style.display = 'none';
+            document.getElementById('overlay-3d').style.display = 'none';
+
+            // Redibujar el editor con la nueva imagen
+            renderEditor();
         }
 
         function updateOverlayScale() {
