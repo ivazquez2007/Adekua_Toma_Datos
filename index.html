@@ -4,9 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADEKUA [vMVP-7] (Superposición + BOM)</title>
+    <title>ADEKUA [vMVP-8] (Superposición + BOM)</title>
     <!-- SheetJS Library for Excel Export -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- html2canvas for Screenshot Capture -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --primary: #0056b3;
@@ -2914,62 +2916,42 @@
         async function fixOverlay() {
             if (!overlay.active || !overlay.img) return;
 
-            // Crear un canvas temporal para combinar la imagen
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = photoCanvas.width;
-            tempCanvas.height = photoCanvas.height;
-            const tCtx = tempCanvas.getContext('2d');
+            // Opción de Captura Visual (WYSIWYG)
+            // Capturamos el contenedor entero (canvas fondo + img overlay)
+            const element = document.getElementById('canvas-container');
 
-            // Dibujar la imagen base (foto actual sin escalar)
-            // IMPORTANTE: Dibujamos el estado actual al 100% del canvas.
-            tCtx.drawImage(imgObj, 0, 0, photoCanvas.width, photoCanvas.height);
+            try {
+                // Usamos html2canvas para "fotografiar" lo que ve el usuario
+                const canvas = await html2canvas(element, {
+                    scale: 2, // Capturamos a doble resolución para mantener calidad
+                    useCORS: true, // Importante para imágenes cargadas
+                    backgroundColor: null // Fondo transparente si lo hubiera
+                });
 
-            // Calcular posición real del overlay desactivando el photoScale
-            tCtx.save();
+                // Reemplazamos la imagen base con la captura
+                imgObj.src = canvas.toDataURL('image/png');
 
-            // Calculamos desplazamiento de centrado de la foto escalada tal como se hace en renderEditor
-            const dw = photoCanvas.width * photoScale;
-            const dh = photoCanvas.height * photoScale;
-            const dx = (photoCanvas.width - dw) / 2;
-            const dy = (photoCanvas.height - dh) / 2;
+                // Resetear estado del overlay
+                overlay.active = false;
+                overlay.img = null;
+                document.getElementById('overlay-controls').style.display = 'none';
+                document.getElementById('overlay-3d').style.display = 'none';
 
-            // Transponer la posición del overlay real al espacio de la foto original (100%)
-            const realX = (overlay.x - dx) / photoScale;
-            const realY = (overlay.y - dy) / photoScale;
-            const realW = (overlay.img.width * overlay.scale) / photoScale;
-            const realH = (overlay.img.height * overlay.scale) / photoScale;
+                // Resetear escala de foto a 100%
+                photoScale = 1.0;
+                document.getElementById('photo-scale').value = '1';
+                document.getElementById('photo-scale-value').innerText = '100%';
 
-            // Dibujar el overlay transformado
-            // Usamos rotación sobre el origen (0,0) para coincidir con el transform-origin del preview
-            if (overlay.rotateZ !== 0) {
-                tCtx.translate(realX, realY);
-                tCtx.rotate(overlay.rotateZ * Math.PI / 180);
-                tCtx.drawImage(overlay.img, 0, 0, realW, realH);
-            } else {
-                tCtx.drawImage(overlay.img, realX, realY, realW, realH);
+                // Esperar carga
+                imgObj.onload = () => {
+                    renderEditor();
+                    imgObj.onload = () => { };
+                };
+
+            } catch (err) {
+                alert('❌ Error al fijar plano: ' + err.message);
+                console.error(err);
             }
-            tCtx.restore();
-
-            // Guardar el nuevo estado como la imagen base
-            imgObj.src = tempCanvas.toDataURL();
-
-            // Resetear estado del overlay
-            overlay.active = false;
-            overlay.img = null;
-            document.getElementById('overlay-controls').style.display = 'none';
-            document.getElementById('overlay-3d').style.display = 'none';
-
-            // Resetear escala de foto a 100% para evitar confusiones de doble escala
-            photoScale = 1.0;
-            document.getElementById('photo-scale').value = '1';
-            document.getElementById('photo-scale-value').innerText = '100%';
-
-            // Esperar a que la imagen se cargue antes de redibujar
-            imgObj.onload = () => {
-                renderEditor();
-                // Limpiar el onload para que no se dispare en redibujados normales
-                imgObj.onload = () => { };
-            };
         }
 
         function updateOverlayScale() {
