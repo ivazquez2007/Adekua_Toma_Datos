@@ -695,554 +695,549 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div id="tech-linea" class="hidden">
-                <div class="card config-card">
-                    <h2 id="sand-config-header">Definición de Componentes (BOM)</h2>
-                    <label>Variante del Sistema</label>
-                    <select id="lv-variant" onchange="toggleLvConfig(); drawPreview();">
-                        <option value="ends10">Ends10 (Estándar)</option>
-                        <option value="ends50">Ends50 (Simplificado)</option>
-                    </select>
-                    <div id="group-ends10">
-                        <label>Elemento de Extremo (EB)</label>
-                        <select id="lv-eb-model" onchange="drawPreview()"></select>
-                        <div class="check-group" style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
-                            <input type="checkbox" id="chk-shock" onchange="toggleShockOpts()">
-                            <label>¿Lleva Absorbedores?</label>
-                        </div>
-                        <div id="opts-shock" class="conditional-box hidden">
-                            <label>Cantidad Absorbedores</label>
-                            <input type="number" id="lv-shock-qty" value="0">
-                            <label>Tipo</label><select id="lv-shock-type">
-                                <option value="SHOCK-10">SHOCK-10</option>
-                                <option value="SHOCK-11">SHOCK-11</option>
-                            </select>
-                        </div>
+        <div id="tech-linea" class="hidden">
+            <div class="card config-card">
+                <h2 id="sand-config-header">Definición de Componentes (BOM)</h2>
+                <label>Variante del Sistema</label>
+                <select id="lv-variant" onchange="toggleLvConfig(); drawPreview();">
+                    <option value="ends10">Ends10 (Estándar)</option>
+                    <option value="ends50">Ends50 (Simplificado)</option>
+                </select>
+                <div id="group-ends10">
+                    <label>Elemento de Extremo (EB)</label>
+                    <select id="lv-eb-model" onchange="drawPreview()"></select>
+                    <div class="check-group" style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
+                        <input type="checkbox" id="chk-shock" onchange="toggleShockOpts()">
+                        <label>¿Lleva Absorbedores?</label>
                     </div>
-                    <div id="group-ends50" class="hidden">
-                        <label>Configuración de Extremos</label>
-                        <select id="lv-ends50-config">
-                            <option value="50-51">1× AIO-ENDS-50 + 1× AIO-ENDS-51</option>
-                            <option value="50-50">2× AIO-ENDS-50</option>
+                    <div id="opts-shock" class="conditional-box hidden">
+                        <label>Cantidad Absorbedores</label>
+                        <input type="number" id="lv-shock-qty" value="0">
+                        <label>Tipo</label><select id="lv-shock-type">
+                            <option value="SHOCK-10">SHOCK-10</option>
+                            <option value="SHOCK-11">SHOCK-11</option>
                         </select>
-                    </div>
-                    <hr style="margin: 20px 0; border:0; border-top:1px solid #ddd;">
-                    <label>Elemento Intermedio (SZH)</label>
-                    <select id="lv-szh-model" onchange="drawPreview()"></select>
-                </div>
-
-                <div class="card" id="card-opts-sand">
-                    <h2>Opciones de Instalación</h2>
-                    <div id="opts-fix-sand01" class="hidden">
-                        <label>Tipo de Fijación (20 uds/base)</label>
-                        <select id="sand01-fix-type">
-                            <option value="BEF 306-VE250">Remache BEF 306-VE250</option>
-                            <option value="BBF-06.3-028-DS-A2">Roscachapa BBF-06.3-028-DS-A2</option>
-                        </select>
-                    </div>
-                    <div class="check-group">
-                        <input type="checkbox" id="chk-alzas">
-                        <label>¿Lleva alzas de nivelación (VL-SAND-SET / VL-20-50)?</label>
                     </div>
                 </div>
-
-                <div class="card">
-                    <h2>Soporte Línea de Vida</h2>
-                    <label>Estructura</label>
-                    <select id="lv-support-type" onchange="toggleLvOpts(); drawPreview();">
-                        <option value="sand02">Cubierta Chapa (Sandwich/Deck)</option>
-                        <option value="poste">Poste Estructural</option>
+                <div id="group-ends50" class="hidden">
+                    <label>Configuración de Extremos</label>
+                    <select id="lv-ends50-config">
+                        <option value="50-51">1× AIO-ENDS-50 + 1× AIO-ENDS-51</option>
+                        <option value="50-50">2× AIO-ENDS-50</option>
                     </select>
-                    <div id="opts-lv-chapa" class="conditional-box">
-                        <label>Tipo Chapa</label>
-                        <select id="lv-chapa-type">
-                            <option value="sandwich">Panel Sandwich</option>
-                            <option value="grecada">Grecada Simple</option>
-                            <option value="deck">Deck</option>
-                        </select>
-                        <label>Tipo de Chapa</label>
-                        <select id="lv-chapa-thick" onchange="updateMaxDistSand02(); drawPreview()">
-                            <option value="10">Chapa Fina (máx 10m entre intermedios)</option>
-                            <option value="12">Chapa Gruesa (máx 12m entre intermedios)</option>
-                        </select>
-                        <label>Distancia Máxima entre Intermedios (m)</label>
-                        <input type="number" id="lv-max-dist-sand02" value="10" min="1" max="12" step="0.5"
-                            onchange="drawPreview()" style="width:100%;">
-                        <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Puedes reducir la
-                            distancia si lo necesitas</small>
-                    </div>
-                    <div id="opts-lv-poste" class="conditional-box hidden">
-                        <label>Distancia Máxima entre Soportes (m)</label>
-                        <input type="number" id="lv-max-dist-poste" value="15" min="1" max="15" step="0.5"
-                            onchange="drawPreview()" style="width:100%;">
-                        <small
-                            style="display:block; margin-top:5px; margin-bottom:15px; color:#666; font-size:0.85rem;">Distancia
-                            máxima entre extremos e intermedios (máx 15m)</small>
+                </div>
+                <hr style="margin: 20px 0; border:0; border-top:1px solid #ddd;">
+                <label>Elemento Intermedio (SZH)</label>
+                <select id="lv-szh-model" onchange="drawPreview()"></select>
+            </div>
 
-                        <div class="check-group"
-                            style="background:#e3f2fd; padding:10px; border-radius:4px; margin-bottom:15px;">
-                            <input type="checkbox" id="chk-use-posts" checked
-                                onchange="toggleUsePostsOpts(); drawPreview();">
-                            <label>Usar Postes en la Instalación</label>
-                        </div>
-                        <div id="opts-with-posts">
-                            <label>Modelo Poste (STA)</label>
-                            <select id="lv-post-model" onchange="drawPreview()"></select>
-                            <label>Material Base</label>
-                            <select id="lv-base-mat">
-                                <option value="hormigon">Hormigón</option>
-                                <option value="acero">Metal</option>
-                                <option value="madera">Madera</option>
-                            </select>
-                            <div style="margin-top:10px;">
-                                <div class="check-group"><input type="checkbox" id="chk-contraplaca"><label>Requiere
-                                        Contraplaca</label></div>
-                                <div class="check-group"><input type="checkbox" id="chk-alzas-posts"><label>Requiere
-                                        Alzas de Nivelación (VL-20-50)</label></div>
-                                <div class="check-group"><input type="checkbox" id="chk-herreria"
-                                        onchange="document.getElementById('desc-herreria').classList.toggle('hidden',!this.checked)"><label>Herrería
-                                        Especial</label></div>
-                                <textarea id="desc-herreria" class="hidden" rows="2"
-                                    placeholder="Detalle..."></textarea>
-                            </div>
-                            <hr style="margin: 15px 0; border:0; border-top:1px solid #ddd;">
-                            <button class="btn-mini" style="width:100%; background:var(--accent);"
-                                onclick="toggleCustomPostsUI()">⚙️ Personalizar Postes Individuales</button>
-                            <div id="custom-posts-container" class="hidden"
-                                style="margin-top:10px; padding:10px; background:#fff3cd; border-radius:4px;">
-                                <p style="font-size:0.85rem; margin:0 0 10px; color:#856404;">Selecciona postes
-                                    específicos
-                                    para usar un modelo diferente:</p>
-                                <div id="custom-posts-list"></div>
-                            </div>
-                        </div>
-                        <div id="opts-without-posts" class="hidden"
-                            style="padding:15px; background:#fff3cd; border-radius:4px; margin-top:10px;">
-                            <p style="font-size:0.9rem; margin:0; color:#856404;"><strong>⚠️ Instalación Sin
-                                    Postes:</strong> Se usarán directamente los elementos de extremo (ENDS) sin postes
-                                estructurales.</p>
-                        </div>
-                    </div>
+            <div class="card" id="card-opts-sand">
+                <h2>Opciones de Instalación</h2>
+                <div id="opts-fix-sand01" class="hidden">
+                    <label>Tipo de Fijación (20 uds/base)</label>
+                    <select id="sand01-fix-type">
+                        <option value="BEF 306-VE250">Remache BEF 306-VE250</option>
+                        <option value="BBF-06.3-028-DS-A2">Roscachapa BBF-06.3-028-DS-A2</option>
+                    </select>
+                </div>
+                <div class="check-group">
+                    <input type="checkbox" id="chk-alzas">
+                    <label>¿Lleva alzas de nivelación (VL-SAND-SET / VL-20-50)?</label>
                 </div>
             </div>
 
-            <div id="tech-rail" class="hidden">
-                <div class="card">
-                    <h2>Configuración Sistema Rail (TAURUS)</h2>
-                    <label>Longitud Total (m)</label>
-                    <input type="number" id="rail-longitud" value="20" min="1" max="500" step="0.5">
-
-                    <div class="check-group" style="margin-top:15px;">
-                        <input type="checkbox" id="rail-cerrada">
-                        <label>Línea Cerrada (bucle)</label>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h2>Tipo de Soporte</h2>
-                    <label>Estructura</label>
-                    <select id="rail-soporte-tipo" onchange="toggleRailSoporteOpts()">
-                        <option value="bef">Fijación Directa (BEF)</option>
-                        <option value="sta">Postes Estructurales (STA)</option>
-                        <option value="bef-eb">Fijación Acero (BEF-411 + EB)</option>
+            <div class="card">
+                <h2>Soporte Línea de Vida</h2>
+                <label>Estructura</label>
+                <select id="lv-support-type" onchange="toggleLvOpts(); drawPreview();">
+                    <option value="sand02">Cubierta Chapa (Sandwich/Deck)</option>
+                    <option value="poste">Poste Estructural</option>
+                </select>
+                <div id="opts-lv-chapa" class="conditional-box">
+                    <label>Tipo Chapa</label>
+                    <select id="lv-chapa-type">
+                        <option value="sandwich">Panel Sandwich</option>
+                        <option value="grecada">Grecada Simple</option>
+                        <option value="deck">Deck</option>
                     </select>
+                    <label>Tipo de Chapa</label>
+                    <select id="lv-chapa-thick" onchange="updateMaxDistSand02(); drawPreview()">
+                        <option value="10">Chapa Fina (máx 10m entre intermedios)</option>
+                        <option value="12">Chapa Gruesa (máx 12m entre intermedios)</option>
+                    </select>
+                    <label>Distancia Máxima entre Intermedios (m)</label>
+                    <input type="number" id="lv-max-dist-sand02" value="10" min="1" max="12" step="0.5"
+                        onchange="drawPreview()" style="width:100%;">
+                    <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Puedes reducir la
+                        distancia si lo necesitas</small>
+                </div>
+                <div id="opts-lv-poste" class="conditional-box hidden">
+                    <label>Distancia Máxima entre Soportes (m)</label>
+                    <input type="number" id="lv-max-dist-poste" value="15" min="1" max="15" step="0.5"
+                        onchange="drawPreview()" style="width:100%;">
+                    <small
+                        style="display:block; margin-top:5px; margin-bottom:15px; color:#666; font-size:0.85rem;">Distancia
+                        máxima entre extremos e intermedios (máx 15m)</small>
 
-                    <div id="opts-rail-bef">
-                        <label>Modelo BEF</label>
-                        <select id="rail-bef-model"></select>
+                    <div class="check-group"
+                        style="background:#e3f2fd; padding:10px; border-radius:4px; margin-bottom:15px;">
+                        <input type="checkbox" id="chk-use-posts" checked
+                            onchange="toggleUsePostsOpts(); drawPreview();">
+                        <label>Usar Postes en la Instalación</label>
                     </div>
-
-                    <div id="opts-rail-sta" class="hidden">
+                    <div id="opts-with-posts">
                         <label>Modelo Poste (STA)</label>
-                        <select id="rail-sta-model"></select>
-                        <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Se añadirá
-                            automáticamente
-                            TAURUS-BEF-30</small>
-                    </div>
-
-                    <div id="opts-rail-bef-eb" class="hidden">
-                        <label>Soporte EB</label>
-                        <select id="rail-eb-model"></select>
-                        <label>Fijación BEF Adicional</label>
-                        <select id="rail-bef-adicional"></select>
-                        <div class="check-group" style="margin-top:10px;">
-                            <input type="checkbox" id="rail-varilla-m16">
-                            <label>Añadir 0.5x Varilla M16 por punto</label>
-                        </div>
-                    </div>
-
-                    <label style="margin-top:15px;">Distancia Máxima entre Soportes (m)</label>
-                    <input type="number" id="rail-dist-max" value="3" min="1" max="6" step="0.1">
-                    <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Máximo recomendado:
-                        6m</small>
-                </div>
-
-                <div class="card">
-                    <h2>Componentes del Sistema</h2>
-
-                    <div class="check-group">
-                        <input type="checkbox" id="rail-usar-6m" checked>
-                        <label>Priorizar raíles de 6m</label>
-                    </div>
-                    <small style="display:block; margin-bottom:15px; color:#666; font-size:0.85rem;">Si no, solo se
-                        usarán
-                        raíles de 3m</small>
-
-                    <label>Tipo de Carro Deslizador</label>
-                    <select id="rail-carro-tipo"></select>
-
-                    <label>Tipo de Unión de Carril</label>
-                    <select id="rail-union-tipo"></select>
-
-                    <div class="check-group" style="margin-top:10px;">
-                        <input type="checkbox" id="rail-optimizar-ve5" checked>
-                        <label>Optimizar con packs VE5 (VB-10/VB-12)</label>
-                    </div>
-                    <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Divide uniones en packs
-                        de
-                        5 +
-                        unidades sueltas</small>
-                </div>
-            </div>
-
-            <div id="tech-attika" class="hidden">
-                <div class="card">
-                    <h2>Configuración Attika</h2>
-                    <label>Lado de los Postes</label>
-                    <select id="a-side" onchange="drawPreview()">
-                        <option value="right">Derecha (Interior)</option>
-                        <option value="left">Izquierda</option>
-                    </select>
-                    <label style="margin-top:15px;">Normativa</label>
-                    <div class="radio-group" style="margin-top:5px;">
-                        <div class="radio-opt">
-                            <input type="radio" name="a-norm" id="a-norm-13374" value="2.5" checked
-                                onchange="drawPreview()">
-                            <label for="a-norm-13374">DIN 13374:2019 (Max 2,5m)</label>
-                        </div>
-                        <div class="radio-opt">
-                            <input type="radio" name="a-norm" id="a-norm-14122" value="1.5" onchange="drawPreview()">
-                            <label for="a-norm-14122">DIN 14122-3:2016 (Max 1,5m)</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="tech-lightflex" class="hidden">
-                <div class="card config-card">
-                    <h2>Configuración LIGHT-FLEX</h2>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div><label>Cantidad Lucernarios</label><input type="number" id="lf-qty" value="1" min="1"
-                                oninput="drawPreview()"></div>
-                        <div><label>Fijación Perimetral</label>
-                            <select id="lf-bracket-type" onchange="drawPreview()">
-                                <option value="LIGHT-FLEX-BEF-02-VZ">BEF-02 (>= 5mm)</option>
-                                <option value="LIGHT-FLEX-BEF-01-VZ">BEF-01 (<= 5mm)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
-                        <div><label>Largo Exterior (m)</label><input type="number" id="lf-len" value="3.5" step="0.1"
-                                oninput="drawPreview()"></div>
-                        <div><label>Ancho Exterior (m)</label><input type="number" id="lf-width" value="2.4" step="0.1"
-                                oninput="drawPreview()"></div>
-                    </div>
-
-                    <h3 style="margin-top:15px;">Barras de Rigidización (RWA)</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
-                        <div><label style="font-size:0.7rem;">RWA-1165</label><input type="number" id="lf-rwa-1165"
-                                value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
-                        <div><label style="font-size:0.7rem;">RWA-1525</label><input type="number" id="lf-rwa-1525"
-                                value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
-                        <div><label style="font-size:0.7rem;">RWA-1900</label><input type="number" id="lf-rwa-1900"
-                                value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
-                    </div>
-
-                    <div id="lf-rwa-advanced" class="conditional-box hidden">
-                        <label>Disposición de Barras (2 uds)</label>
-                        <select id="lf-rwa-mode" onchange="toggleLfRwaDetails(); drawPreview();">
-                            <option value="standard">Estándar (Sustituye Perímetro)</option>
-                            <option value="center">Centro Agrupado (Split)</option>
+                        <select id="lv-post-model" onchange="drawPreview()"></select>
+                        <label>Material Base</label>
+                        <select id="lv-base-mat">
+                            <option value="hormigon">Hormigón</option>
+                            <option value="acero">Metal</option>
+                            <option value="madera">Madera</option>
                         </select>
-                        <div id="lf-rwa-split-opts" class="hidden" style="margin-top:10px;">
-                            <label>Gap (mm)</label><input type="number" id="lf-rwa-gap" value="100"
-                                oninput="drawPreview()">
-                            <label>División</label>
-                            <select id="lf-rwa-axis" onchange="drawPreview()">
-                                <option value="L">Dividir Largo (Verticales)</option>
-                                <option value="W">Dividir Ancho (Horizontales)</option>
-                            </select>
+                        <div style="margin-top:10px;">
+                            <div class="check-group"><input type="checkbox" id="chk-contraplaca"><label>Requiere
+                                    Contraplaca</label></div>
+                            <div class="check-group"><input type="checkbox" id="chk-alzas-posts"><label>Requiere
+                                    Alzas de Nivelación (VL-20-50)</label></div>
+                            <div class="check-group"><input type="checkbox" id="chk-herreria"
+                                    onchange="document.getElementById('desc-herreria').classList.toggle('hidden',!this.checked)"><label>Herrería
+                                    Especial</label></div>
+                            <textarea id="desc-herreria" class="hidden" rows="2" placeholder="Detalle..."></textarea>
                         </div>
-                        <div id="lf-rwa-standard-opts" style="margin-top:10px;">
-                            <label>Ubicación de Barras</label>
-                            <select id="lf-rwa-loc" onchange="drawPreview()">
-                                <option value="long_side">Lados Largos</option>
-                                <option value="short_side">Lados Cortos</option>
-                            </select>
+                        <hr style="margin: 15px 0; border:0; border-top:1px solid #ddd;">
+                        <button class="btn-mini" style="width:100%; background:var(--accent);"
+                            onclick="toggleCustomPostsUI()">⚙️ Personalizar Postes Individuales</button>
+                        <div id="custom-posts-container" class="hidden"
+                            style="margin-top:10px; padding:10px; background:#fff3cd; border-radius:4px;">
+                            <p style="font-size:0.85rem; margin:0 0 10px; color:#856404;">Selecciona postes
+                                específicos
+                                para usar un modelo diferente:</p>
+                            <div id="custom-posts-list"></div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>Accesos, Seguridad, Varios</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div><label>VARIOS PLUMA</label><input type="number" id="v-pluma" value="0" min="0"></div>
-                    <div><label>PEMP</label><input type="number" id="v-pemp" value="0" min="0"></div>
-                    <div><label>VARIOS ATXABASTAR</label><input type="number" id="v-atxabastar" value="0" min="0"></div>
-                    <div><label>VARIOS ESCALERA</label><input type="number" id="v-escalera" value="0" min="0"></div>
-                    <div><label>VARIOS GANCHO ESCALERA</label><input type="number" id="v-gancho-escalera" value="0"
-                            min="0"></div>
-                    <div><label>VARIOS HERRERÍA JOSU</label><input type="number" id="v-herreria-josu" value="0" min="0">
+                    <div id="opts-without-posts" class="hidden"
+                        style="padding:15px; background:#fff3cd; border-radius:4px; margin-top:10px;">
+                        <p style="font-size:0.9rem; margin:0; color:#856404;"><strong>⚠️ Instalación Sin
+                                Postes:</strong> Se usarán directamente los elementos de extremo (ENDS) sin postes
+                            estructurales.</p>
                     </div>
-                    <div><label>VARIOS PELDAÑO</label><input type="number" id="v-peldano" value="0" min="0"></div>
-                    <div><label>VARIOS SELLADO</label><input type="number" id="v-sellado" value="0" min="0"></div>
                 </div>
             </div>
         </div>
 
+        <div id="tech-rail" class="hidden">
+            <div class="card">
+                <h2>Configuración Sistema Rail (TAURUS)</h2>
+                <label>Longitud Total (m)</label>
+                <input type="number" id="rail-longitud" value="20" min="1" max="500" step="0.5">
 
-
-        <div id="tab-geometria" class="section">
-            <div id="geo-preview-container">
-                <div class="preview-label">👁️ Plano de Instalación</div>
-                <canvas id="geo-canvas" width="600" height="350"></canvas>
-                <div class="bom-overlay" id="bom-display">Items: 0</div>
+                <div class="check-group" style="margin-top:15px;">
+                    <input type="checkbox" id="rail-cerrada">
+                    <label>Línea Cerrada (bucle)</label>
+                </div>
             </div>
 
-            <div id="bom-table-container">
-                <table class="bom-table">
-                    <thead>
-                        <tr>
-                            <th style="width:150px;">Código</th>
-                            <th>Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bom-table-body"></tbody>
-                </table>
+            <div class="card">
+                <h2>Tipo de Soporte</h2>
+                <label>Estructura</label>
+                <select id="rail-soporte-tipo" onchange="toggleRailSoporteOpts()">
+                    <option value="bef">Fijación Directa (BEF)</option>
+                    <option value="sta">Postes Estructurales (STA)</option>
+                    <option value="bef-eb">Fijación Acero (BEF-411 + EB)</option>
+                </select>
+
+                <div id="opts-rail-bef">
+                    <label>Modelo BEF</label>
+                    <select id="rail-bef-model"></select>
+                </div>
+
+                <div id="opts-rail-sta" class="hidden">
+                    <label>Modelo Poste (STA)</label>
+                    <select id="rail-sta-model"></select>
+                    <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Se añadirá
+                        automáticamente
+                        TAURUS-BEF-30</small>
+                </div>
+
+                <div id="opts-rail-bef-eb" class="hidden">
+                    <label>Soporte EB</label>
+                    <select id="rail-eb-model"></select>
+                    <label>Fijación BEF Adicional</label>
+                    <select id="rail-bef-adicional"></select>
+                    <div class="check-group" style="margin-top:10px;">
+                        <input type="checkbox" id="rail-varilla-m16">
+                        <label>Añadir 0.5x Varilla M16 por punto</label>
+                    </div>
+                </div>
+
+                <label style="margin-top:15px;">Distancia Máxima entre Soportes (m)</label>
+                <input type="number" id="rail-dist-max" value="3" min="1" max="6" step="0.1">
+                <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Máximo recomendado:
+                    6m</small>
             </div>
 
-            <div id="legend-table-container" style="margin-top:20px;">
-                <h3 style="margin-bottom:10px;">Leyenda del Plano</h3>
-                <table class="bom-table">
-                    <thead>
-                        <tr>
-                            <th style="width:80px;">Número</th>
-                            <th>Descripción de Componentes</th>
-                        </tr>
-                    </thead>
-                    <tbody id="legend-table-body"></tbody>
-                </table>
-            </div>
+            <div class="card">
+                <h2>Componentes del Sistema</h2>
 
-            <div id="geo-barandilla">
-                <div class="card config-card" style="margin-bottom:10px;">
-                    <h3>Configuración</h3>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div>
-                            <label>Fijación</label>
-                            <select id="b-fix-type" onchange="drawPreview()">
-                                <option value="contrapeso">Autoportante</option>
-                                <option value="chapa">Fijación a Parapeto</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Normativa (Dist. Max)</label>
-                            <div class="radio-group">
-                                <div class="radio-opt">
-                                    <input type="radio" name="b-norm" id="b-norm-2.5" value="2.5" checked
-                                        onchange="drawPreview()">
-                                    <label for="b-norm-2.5">2.5m</label>
-                                </div>
-                                <div class="radio-opt">
-                                    <input type="radio" name="b-norm" id="b-norm-1.5" value="1.5"
-                                        onchange="drawPreview()">
-                                    <label for="b-norm-1.5">1.5m</label>
-                                </div>
+                <div class="check-group">
+                    <input type="checkbox" id="rail-usar-6m" checked>
+                    <label>Priorizar raíles de 6m</label>
+                </div>
+                <small style="display:block; margin-bottom:15px; color:#666; font-size:0.85rem;">Si no, solo se
+                    usarán
+                    raíles de 3m</small>
+
+                <label>Tipo de Carro Deslizador</label>
+                <select id="rail-carro-tipo"></select>
+
+                <label>Tipo de Unión de Carril</label>
+                <select id="rail-union-tipo"></select>
+
+                <div class="check-group" style="margin-top:10px;">
+                    <input type="checkbox" id="rail-optimizar-ve5" checked>
+                    <label>Optimizar con packs VE5 (VB-10/VB-12)</label>
+                </div>
+                <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Divide uniones en packs
+                    de
+                    5 +
+                    unidades sueltas</small>
+            </div>
+        </div>
+
+        <div id="tech-attika" class="hidden">
+            <div class="card">
+                <h2>Configuración Attika</h2>
+                <label>Lado de los Postes</label>
+                <select id="a-side" onchange="drawPreview()">
+                    <option value="right">Derecha (Interior)</option>
+                    <option value="left">Izquierda</option>
+                </select>
+                <label style="margin-top:15px;">Normativa</label>
+                <div class="radio-group" style="margin-top:5px;">
+                    <div class="radio-opt">
+                        <input type="radio" name="a-norm" id="a-norm-13374" value="2.5" checked
+                            onchange="drawPreview()">
+                        <label for="a-norm-13374">DIN 13374:2019 (Max 2,5m)</label>
+                    </div>
+                    <div class="radio-opt">
+                        <input type="radio" name="a-norm" id="a-norm-14122" value="1.5" onchange="drawPreview()">
+                        <label for="a-norm-14122">DIN 14122-3:2016 (Max 1,5m)</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tech-lightflex" class="hidden">
+            <div class="card config-card">
+                <h2>Configuración LIGHT-FLEX</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div><label>Cantidad Lucernarios</label><input type="number" id="lf-qty" value="1" min="1"
+                            oninput="drawPreview()"></div>
+                    <div><label>Fijación Perimetral</label>
+                        <select id="lf-bracket-type" onchange="drawPreview()">
+                            <option value="LIGHT-FLEX-BEF-02-VZ">BEF-02 (>= 5mm)</option>
+                            <option value="LIGHT-FLEX-BEF-01-VZ">BEF-01 (<= 5mm)</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
+                    <div><label>Largo Exterior (m)</label><input type="number" id="lf-len" value="3.5" step="0.1"
+                            oninput="drawPreview()"></div>
+                    <div><label>Ancho Exterior (m)</label><input type="number" id="lf-width" value="2.4" step="0.1"
+                            oninput="drawPreview()"></div>
+                </div>
+
+                <h3 style="margin-top:15px;">Barras de Rigidización (RWA)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
+                    <div><label style="font-size:0.7rem;">RWA-1165</label><input type="number" id="lf-rwa-1165"
+                            value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
+                    <div><label style="font-size:0.7rem;">RWA-1525</label><input type="number" id="lf-rwa-1525"
+                            value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
+                    <div><label style="font-size:0.7rem;">RWA-1900</label><input type="number" id="lf-rwa-1900"
+                            value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
+                </div>
+
+                <div id="lf-rwa-advanced" class="conditional-box hidden">
+                    <label>Disposición de Barras (2 uds)</label>
+                    <select id="lf-rwa-mode" onchange="toggleLfRwaDetails(); drawPreview();">
+                        <option value="standard">Estándar (Sustituye Perímetro)</option>
+                        <option value="center">Centro Agrupado (Split)</option>
+                    </select>
+                    <div id="lf-rwa-split-opts" class="hidden" style="margin-top:10px;">
+                        <label>Gap (mm)</label><input type="number" id="lf-rwa-gap" value="100" oninput="drawPreview()">
+                        <label>División</label>
+                        <select id="lf-rwa-axis" onchange="drawPreview()">
+                            <option value="L">Dividir Largo (Verticales)</option>
+                            <option value="W">Dividir Ancho (Horizontales)</option>
+                        </select>
+                    </div>
+                    <div id="lf-rwa-standard-opts" style="margin-top:10px;">
+                        <label>Ubicación de Barras</label>
+                        <select id="lf-rwa-loc" onchange="drawPreview()">
+                            <option value="long_side">Lados Largos</option>
+                            <option value="short_side">Lados Cortos</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Accesos, Seguridad, Varios</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div><label>VARIOS PLUMA</label><input type="number" id="v-pluma" value="0" min="0"></div>
+                <div><label>PEMP</label><input type="number" id="v-pemp" value="0" min="0"></div>
+                <div><label>VARIOS ATXABASTAR</label><input type="number" id="v-atxabastar" value="0" min="0"></div>
+                <div><label>VARIOS ESCALERA</label><input type="number" id="v-escalera" value="0" min="0"></div>
+                <div><label>VARIOS GANCHO ESCALERA</label><input type="number" id="v-gancho-escalera" value="0" min="0">
+                </div>
+                <div><label>VARIOS HERRERÍA JOSU</label><input type="number" id="v-herreria-josu" value="0" min="0">
+                </div>
+                <div><label>VARIOS PELDAÑO</label><input type="number" id="v-peldano" value="0" min="0"></div>
+                <div><label>VARIOS SELLADO</label><input type="number" id="v-sellado" value="0" min="0"></div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="tab-geometria" class="section">
+        <div id="geo-preview-container">
+            <div class="preview-label">👁️ Plano de Instalación</div>
+            <canvas id="geo-canvas" width="600" height="350"></canvas>
+            <div class="bom-overlay" id="bom-display">Items: 0</div>
+        </div>
+
+        <div id="bom-table-container">
+            <table class="bom-table">
+                <thead>
+                    <tr>
+                        <th style="width:150px;">Código</th>
+                        <th>Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody id="bom-table-body"></tbody>
+            </table>
+        </div>
+
+        <div id="legend-table-container" style="margin-top:20px;">
+            <h3 style="margin-bottom:10px;">Leyenda del Plano</h3>
+            <table class="bom-table">
+                <thead>
+                    <tr>
+                        <th style="width:80px;">Número</th>
+                        <th>Descripción de Componentes</th>
+                    </tr>
+                </thead>
+                <tbody id="legend-table-body"></tbody>
+            </table>
+        </div>
+
+        <div id="geo-barandilla">
+            <div class="card config-card" style="margin-bottom:10px;">
+                <h3>Configuración</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div>
+                        <label>Fijación</label>
+                        <select id="b-fix-type" onchange="drawPreview()">
+                            <option value="contrapeso">Autoportante</option>
+                            <option value="chapa">Fijación a Parapeto</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Normativa (Dist. Max)</label>
+                        <div class="radio-group">
+                            <div class="radio-opt">
+                                <input type="radio" name="b-norm" id="b-norm-2.5" value="2.5" checked
+                                    onchange="drawPreview()">
+                                <label for="b-norm-2.5">2.5m</label>
+                            </div>
+                            <div class="radio-opt">
+                                <input type="radio" name="b-norm" id="b-norm-1.5" value="1.5" onchange="drawPreview()">
+                                <label for="b-norm-1.5">1.5m</label>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="card config-card">
-                    <h3>Terminaciones</h3>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div><label>Comienzo</label><select id="b-start-conf" onchange="drawPreview()">
-                                <option value="R41">R41 (Pared)</option>
-                                <option value="R91">R91 (Libre)</option>
-                                <option value="R51">R51 (Libre/Unido)</option>
-                            </select></div>
-                        <div><label>Final</label><select id="b-end-conf" onchange="drawPreview()">
-                                <option value="R41">R41 (Pared)</option>
-                                <option value="R91">R91 (Libre)</option>
-                                <option value="R51">R51 (Libre/Unido)</option>
-                            </select></div>
-                    </div>
-                </div>
-                <div id="b-tramos-list"></div>
-                <button class="btn-full btn-add" onclick="addBarandillaTramo()">+ Añadir Tramo Recto</button>
             </div>
 
-            <div id="geo-linea" class="hidden">
-                <div class="card" style="background: #e3f2fd; padding:10px;">
-                    <div class="check-group"><input type="checkbox" id="lv-loop" onchange="drawPreview()"><label>Sistema
-                            Cerrado (Anillo)</label></div>
+            <div class="card config-card">
+                <h3>Terminaciones</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><label>Comienzo</label><select id="b-start-conf" onchange="drawPreview()">
+                            <option value="R41">R41 (Pared)</option>
+                            <option value="R91">R91 (Libre)</option>
+                            <option value="R51">R51 (Libre/Unido)</option>
+                        </select></div>
+                    <div><label>Final</label><select id="b-end-conf" onchange="drawPreview()">
+                            <option value="R41">R41 (Pared)</option>
+                            <option value="R91">R91 (Libre)</option>
+                            <option value="R51">R51 (Libre/Unido)</option>
+                        </select></div>
                 </div>
-                <div id="lv-tramos-list"></div>
-                <button class="btn-full btn-add" onclick="addLvTramo()">+ Añadir Segmento</button>
             </div>
+            <div id="b-tramos-list"></div>
+            <button class="btn-full btn-add" onclick="addBarandillaTramo()">+ Añadir Tramo Recto</button>
         </div>
 
-        <div id="tab-fotos" class="section">
-            <div class="card" style="text-align: center;">
-                <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none"
-                    onchange="loadPhoto(event)">
-                <button class="btn-full" style="background:#555; color:white; margin-bottom:10px;"
-                    onclick="document.getElementById('cam-input').click()">📷 Tomar Foto</button>
+        <div id="geo-linea" class="hidden">
+            <div class="card" style="background: #e3f2fd; padding:10px;">
+                <div class="check-group"><input type="checkbox" id="lv-loop" onchange="drawPreview()"><label>Sistema
+                        Cerrado (Anillo)</label></div>
+            </div>
+            <div id="lv-tramos-list"></div>
+            <button class="btn-full btn-add" onclick="addLvTramo()">+ Añadir Segmento</button>
+        </div>
+    </div>
 
-                <div id="canvas-container" style="position:relative; overflow:hidden; border:1px solid #ccc;">
-                    <canvas id="editor"></canvas>
-                    <!-- 3D Overlay Element -->
-                    <img id="overlay-3d"
-                        style="display:none; position:absolute; top:0; left:0; pointer-events:none; transform-origin: 0 0; z-index:9999; margin:0; padding:0; border:none; max-width:none; max-height:none; box-sizing:content-box;">
-                </div>
+    <div id="tab-fotos" class="section">
+        <div class="card" style="text-align: center;">
+            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none"
+                onchange="loadPhoto(event)">
+            <button class="btn-full" style="background:#555; color:white; margin-bottom:10px;"
+                onclick="document.getElementById('cam-input').click()">📷 Tomar Foto</button>
 
-                <!-- Controles de Escala de Foto -->
-                <div class="control-group" id="photo-scale-controls" style="display:none;">
-                    <div class="control-row">
-                        <label>📏 Escala Foto:</label>
-                        <input type="range" id="photo-scale" min="0.1" max="2" step="0.05" value="1"
-                            oninput="updatePhotoScale()">
-                        <span class="value-display" id="photo-scale-value">100%</span>
-                    </div>
-                </div>
+            <div id="canvas-container" style="position:relative; overflow:hidden; border:1px solid #ccc;">
+                <canvas id="editor"></canvas>
+                <!-- 3D Overlay Element -->
+                <img id="overlay-3d"
+                    style="display:none; position:absolute; top:0; left:0; pointer-events:none; transform-origin: 0 0; z-index:9999; margin:0; padding:0; border:none; max-width:none; max-height:none; box-sizing:content-box;">
+            </div>
 
-                <div id="overlay-controls"
-                    style="display:none; background:#f1f3f5; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #ddd;">
-                    <label style="margin-top:0; color:var(--purple); font-weight:bold;">🗺️ Ajustar Plano (3D)</label>
-
-                    <!-- Scale Control -->
-                    <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin:8px 0;">
-                        <span style="font-size:0.8rem; min-width:70px;">📏 Tamaño:</span>
-                        <input type="range" id="overlay-scale" min="0.1" max="3" step="0.01" value="1"
-                            oninput="updateOverlayScale()" style="flex:1;">
-                        <span id="overlay-scale-value"
-                            style="font-size:0.8rem; min-width:50px; font-weight:bold; color:var(--purple);">100%</span>
-                    </div>
-
-                    <!-- Rotation Controls -->
-                    <div style="background:#fff; padding:8px; border-radius:4px; margin:8px 0;">
-                        <label
-                            style="font-size:0.85rem; font-weight:bold; margin:0 0 8px 0; display:block; color:#555;">🔄
-                            Rotación 3D</label>
-
-                        <!-- Rotate X (HIDDEN: Not supported in 2D Fix) -->
-                        <div style="display:none; gap:10px; align-items:center; margin:5px 0;">
-                            <span style="font-size:0.75rem; min-width:55px; color:#666;">↔️ Eje X:</span>
-                            <input type="range" id="overlay-rotateX" min="-180" max="180" step="1" value="0"
-                                oninput="updateOverlayRotation()" style="flex:1;">
-                            <span id="overlay-rotateX-value"
-                                style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
-                        </div>
-
-                        <!-- Rotate Y (HIDDEN: Not supported in 2D Fix) -->
-                        <div style="display:none; gap:10px; align-items:center; margin:5px 0;">
-                            <span style="font-size:0.75rem; min-width:55px; color:#666;">↕️ Eje Y:</span>
-                            <input type="range" id="overlay-rotateY" min="-180" max="180" step="1" value="0"
-                                oninput="updateOverlayRotation()" style="flex:1;">
-                            <span id="overlay-rotateY-value"
-                                style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
-                        </div>
-
-                        <!-- Rotate Z -->
-                        <div style="display:flex; gap:10px; align-items:center; margin:5px 0;">
-                            <span style="font-size:0.75rem; min-width:55px; color:#666;">🔃 Eje Z:</span>
-                            <input type="range" id="overlay-rotateZ" min="0" max="360" step="1" value="0"
-                                oninput="updateOverlayRotation()" style="flex:1;">
-                            <span id="overlay-rotateZ-value"
-                                style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
-                        </div>
-                    </div>
-
-                    <button class="btn-mini" style="background:var(--success); width:100%;" onclick="fixOverlay()">✅
-                        Fijar Plano</button>
-                    <p style="font-size:0.7rem; color:#666; margin:5px 0 0 0;">Arrastra para mover. Usa las barras para
-                        escalar y rotar en 3D.</p>
-                </div>
-
-                <!-- Selector de Herramienta -->
-                <div class="control-group">
-                    <label style="margin:0 0 8px 0; display:block; text-align:center; font-weight:bold;">🎨
-                        Herramientas</label>
-                    <div class="tool-selector">
-                        <button class="tool-btn active" onclick="setDrawTool('line')">✏️ Línea</button>
-                        <button class="tool-btn" onclick="setDrawTool('circle')">⭕ Círculo</button>
-                        <button class="tool-btn" onclick="setDrawTool('square')">⬜ Cuadrado</button>
-                        <button class="tool-btn" onclick="setDrawTool('triangle')">🔺 Triángulo</button>
-                        <button class="tool-btn" onclick="setDrawTool('x')">❌ X</button>
-                        <button class="tool-btn" onclick="setDrawTool('text')">📝 Texto</button>
-                    </div>
-                </div>
-                <!-- Botón Deshacer -->
-                <button class="btn-mini" style="background:#ff9800; width:100%; margin-top:8px;"
-                    onclick="undoAnnotation()" id="undo-btn" disabled>
-                    ↶ Deshacer
-                </button>
-
-                <!-- Selector de Color -->
-                <div class="control-group">
-                    <label style="margin:0 0 8px 0; display:block; text-align:center; font-weight:bold;">🎨
-                        Colores</label>
-                    <div class="color-selector">
-                        <div class="color-btn active" style="background:#ff0000;" onclick="setDrawColor('#ff0000')"
-                            title="Rojo"></div>
-                        <div class="color-btn" style="background:#0000ff;" onclick="setDrawColor('#0000ff')"
-                            title="Azul"></div>
-                        <div class="color-btn" style="background:#00ff00;" onclick="setDrawColor('#00ff00')"
-                            title="Verde"></div>
-                        <div class="color-btn" style="background:#ffff00;" onclick="setDrawColor('#ffff00')"
-                            title="Amarillo"></div>
-                        <div class="color-btn" style="background:#000000;" onclick="setDrawColor('#000000')"
-                            title="Negro"></div>
-                        <div class="color-btn" style="background:#ffffff; border-color:#999;"
-                            onclick="setDrawColor('#ffffff')" title="Blanco"></div>
-                    </div>
-                </div>
-
-                <!-- Controles de Ajuste -->
-                <div class="control-group">
-                    <div class="control-row">
-                        <label>📏 Grosor:</label>
-                        <input type="range" id="line-width" min="1" max="20" step="1" value="5"
-                            oninput="updateLineWidth()">
-                        <span class="value-display" id="line-width-value">5px</span>
-                    </div>
-                    <div class="control-row">
-                        <label>📝 Tam. Texto:</label>
-                        <input type="range" id="text-size" min="12" max="72" step="2" value="24"
-                            oninput="updateTextSize()">
-                        <span class="value-display" id="text-size-value">24px</span>
-                    </div>
-                </div>
-
-                <!-- Input de Texto (solo visible cuando se selecciona herramienta texto) -->
-                <div id="text-input-container" style="display:none;">
-                    <input type="text" id="text-input" placeholder="Escribe el texto aquí..." maxlength="100">
-                    <p style="font-size:0.75rem; color:#666; margin:5px 0;">Haz clic en la foto para añadir el texto</p>
-                </div>
-
-                <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
-                    <button onclick="importPlanToPhoto()" class="btn-mini btn-overlay">🗺️ Superponer Plano</button>
-                    <button onclick="clearDraw()" class="btn-mini">↺ Limpiar</button>
-                    <button onclick="savePhoto()" class="btn-mini btn-save">💾 Guardar</button>
+            <!-- Controles de Escala de Foto -->
+            <div class="control-group" id="photo-scale-controls" style="display:none;">
+                <div class="control-row">
+                    <label>📏 Escala Foto:</label>
+                    <input type="range" id="photo-scale" min="0.1" max="2" step="0.05" value="1"
+                        oninput="updatePhotoScale()">
+                    <span class="value-display" id="photo-scale-value">100%</span>
                 </div>
             </div>
-            <div class="card">
-                <h3>Galería (<span id="photo-count">0</span>)</h3>
-                <div class="gallery" id="gallery-grid"></div>
+
+            <div id="overlay-controls"
+                style="display:none; background:#f1f3f5; padding:10px; border-radius:4px; margin-bottom:10px; border:1px solid #ddd;">
+                <label style="margin-top:0; color:var(--purple); font-weight:bold;">🗺️ Ajustar Plano (3D)</label>
+
+                <!-- Scale Control -->
+                <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin:8px 0;">
+                    <span style="font-size:0.8rem; min-width:70px;">📏 Tamaño:</span>
+                    <input type="range" id="overlay-scale" min="0.1" max="3" step="0.01" value="1"
+                        oninput="updateOverlayScale()" style="flex:1;">
+                    <span id="overlay-scale-value"
+                        style="font-size:0.8rem; min-width:50px; font-weight:bold; color:var(--purple);">100%</span>
+                </div>
+
+                <!-- Rotation Controls -->
+                <div style="background:#fff; padding:8px; border-radius:4px; margin:8px 0;">
+                    <label style="font-size:0.85rem; font-weight:bold; margin:0 0 8px 0; display:block; color:#555;">🔄
+                        Rotación 3D</label>
+
+                    <!-- Rotate X (HIDDEN: Not supported in 2D Fix) -->
+                    <div style="display:none; gap:10px; align-items:center; margin:5px 0;">
+                        <span style="font-size:0.75rem; min-width:55px; color:#666;">↔️ Eje X:</span>
+                        <input type="range" id="overlay-rotateX" min="-180" max="180" step="1" value="0"
+                            oninput="updateOverlayRotation()" style="flex:1;">
+                        <span id="overlay-rotateX-value"
+                            style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
+                    </div>
+
+                    <!-- Rotate Y (HIDDEN: Not supported in 2D Fix) -->
+                    <div style="display:none; gap:10px; align-items:center; margin:5px 0;">
+                        <span style="font-size:0.75rem; min-width:55px; color:#666;">↕️ Eje Y:</span>
+                        <input type="range" id="overlay-rotateY" min="-180" max="180" step="1" value="0"
+                            oninput="updateOverlayRotation()" style="flex:1;">
+                        <span id="overlay-rotateY-value"
+                            style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
+                    </div>
+
+                    <!-- Rotate Z -->
+                    <div style="display:flex; gap:10px; align-items:center; margin:5px 0;">
+                        <span style="font-size:0.75rem; min-width:55px; color:#666;">🔃 Eje Z:</span>
+                        <input type="range" id="overlay-rotateZ" min="0" max="360" step="1" value="0"
+                            oninput="updateOverlayRotation()" style="flex:1;">
+                        <span id="overlay-rotateZ-value"
+                            style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
+                    </div>
+                </div>
+
+                <button class="btn-mini" style="background:var(--success); width:100%;" onclick="fixOverlay()">✅
+                    Fijar Plano</button>
+                <p style="font-size:0.7rem; color:#666; margin:5px 0 0 0;">Arrastra para mover. Usa las barras para
+                    escalar y rotar en 3D.</p>
+            </div>
+
+            <!-- Selector de Herramienta -->
+            <div class="control-group">
+                <label style="margin:0 0 8px 0; display:block; text-align:center; font-weight:bold;">🎨
+                    Herramientas</label>
+                <div class="tool-selector">
+                    <button class="tool-btn active" onclick="setDrawTool('line')">✏️ Línea</button>
+                    <button class="tool-btn" onclick="setDrawTool('circle')">⭕ Círculo</button>
+                    <button class="tool-btn" onclick="setDrawTool('square')">⬜ Cuadrado</button>
+                    <button class="tool-btn" onclick="setDrawTool('triangle')">🔺 Triángulo</button>
+                    <button class="tool-btn" onclick="setDrawTool('x')">❌ X</button>
+                    <button class="tool-btn" onclick="setDrawTool('text')">📝 Texto</button>
+                </div>
+            </div>
+            <!-- Botón Deshacer -->
+            <button class="btn-mini" style="background:#ff9800; width:100%; margin-top:8px;" onclick="undoAnnotation()"
+                id="undo-btn" disabled>
+                ↶ Deshacer
+            </button>
+
+            <!-- Selector de Color -->
+            <div class="control-group">
+                <label style="margin:0 0 8px 0; display:block; text-align:center; font-weight:bold;">🎨
+                    Colores</label>
+                <div class="color-selector">
+                    <div class="color-btn active" style="background:#ff0000;" onclick="setDrawColor('#ff0000')"
+                        title="Rojo"></div>
+                    <div class="color-btn" style="background:#0000ff;" onclick="setDrawColor('#0000ff')" title="Azul">
+                    </div>
+                    <div class="color-btn" style="background:#00ff00;" onclick="setDrawColor('#00ff00')" title="Verde">
+                    </div>
+                    <div class="color-btn" style="background:#ffff00;" onclick="setDrawColor('#ffff00')"
+                        title="Amarillo"></div>
+                    <div class="color-btn" style="background:#000000;" onclick="setDrawColor('#000000')" title="Negro">
+                    </div>
+                    <div class="color-btn" style="background:#ffffff; border-color:#999;"
+                        onclick="setDrawColor('#ffffff')" title="Blanco"></div>
+                </div>
+            </div>
+
+            <!-- Controles de Ajuste -->
+            <div class="control-group">
+                <div class="control-row">
+                    <label>📏 Grosor:</label>
+                    <input type="range" id="line-width" min="1" max="20" step="1" value="5" oninput="updateLineWidth()">
+                    <span class="value-display" id="line-width-value">5px</span>
+                </div>
+                <div class="control-row">
+                    <label>📝 Tam. Texto:</label>
+                    <input type="range" id="text-size" min="12" max="72" step="2" value="24" oninput="updateTextSize()">
+                    <span class="value-display" id="text-size-value">24px</span>
+                </div>
+            </div>
+
+            <!-- Input de Texto (solo visible cuando se selecciona herramienta texto) -->
+            <div id="text-input-container" style="display:none;">
+                <input type="text" id="text-input" placeholder="Escribe el texto aquí..." maxlength="100">
+                <p style="font-size:0.75rem; color:#666; margin:5px 0;">Haz clic en la foto para añadir el texto</p>
+            </div>
+
+            <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="importPlanToPhoto()" class="btn-mini btn-overlay">🗺️ Superponer Plano</button>
+                <button onclick="clearDraw()" class="btn-mini">↺ Limpiar</button>
+                <button onclick="savePhoto()" class="btn-mini btn-save">💾 Guardar</button>
             </div>
         </div>
+        <div class="card">
+            <h3>Galería (<span id="photo-count">0</span>)</h3>
+            <div class="gallery" id="gallery-grid"></div>
+        </div>
+    </div>
 
     </div>
 
@@ -3610,7 +3605,13 @@
                 if (currentSystem === 'sand01' || supportType === 'sand02') {
                     // SAND bases (2 extremos + intermedios + curvas + MANUALES)
                     // Note: solveLvPosts includes manual points in 'countExtras'
-                    const totalBases = 2 + countSZH + countCurves + countExtras;
+                    let totalBases = 2 + countSZH + countCurves + countExtras;
+
+                    // Shared Support Check
+                    if (document.getElementById('chk-shared-support').checked) {
+                        totalBases -= 1;
+                    }
+
                     const baseCode = currentSystem === 'sand01' ? 'SAND-01' : 'SAND-02';
                     bom[baseCode] = totalBases;
 
@@ -3733,11 +3734,16 @@
                     // Logic with POSTS (Default or Custom)
                     // We need to count by model
                     const defaultModel = document.getElementById('lv-post-model').value;
+                    const isShared = document.getElementById('chk-shared-support').checked;
 
                     // 1. Structural Nodes (Start, Corners, End)
                     // Total nodes = tramosData.length + 1
                     const numNodes = tramosData.length + 1;
                     for (let i = 0; i < numNodes; i++) {
+                        // If shared support is active, skip the last node (Poste Final) 
+                        // because it shares the post with Node 0 (Poste Inicial)
+                        if (isShared && i === numNodes - 1) continue;
+
                         const nodeKey = `node_${i}`;
                         const model = customPostSelections[nodeKey] || defaultModel;
                         bom[model] = (bom[model] || 0) + 1;
