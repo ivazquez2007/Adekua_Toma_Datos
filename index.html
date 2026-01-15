@@ -695,308 +695,312 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div id="tech-linea" class="hidden">
-            <div class="card config-card">
-                <h2 id="sand-config-header">Definición de Componentes (BOM)</h2>
-                <label>Variante del Sistema</label>
-                <select id="lv-variant" onchange="toggleLvConfig(); drawPreview();">
-                    <option value="ends10">Ends10 (Estándar)</option>
-                    <option value="ends50">Ends50 (Simplificado)</option>
-                </select>
-                <div id="group-ends10">
-                    <label>Elemento de Extremo (EB)</label>
-                    <select id="lv-eb-model" onchange="drawPreview()"></select>
-                    <div class="check-group" style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
-                        <input type="checkbox" id="chk-shock" onchange="toggleShockOpts()">
-                        <label>¿Lleva Absorbedores?</label>
+
+            <div id="tech-linea" class="hidden">
+                <div class="card config-card">
+                    <h2 id="sand-config-header">Definición de Componentes (BOM)</h2>
+                    <label>Variante del Sistema</label>
+                    <select id="lv-variant" onchange="toggleLvConfig(); drawPreview();">
+                        <option value="ends10">Ends10 (Estándar)</option>
+                        <option value="ends50">Ends50 (Simplificado)</option>
+                    </select>
+                    <div id="group-ends10">
+                        <label>Elemento de Extremo (EB)</label>
+                        <select id="lv-eb-model" onchange="drawPreview()"></select>
+                        <div class="check-group" style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
+                            <input type="checkbox" id="chk-shock" onchange="toggleShockOpts()">
+                            <label>¿Lleva Absorbedores?</label>
+                        </div>
+                        <div id="opts-shock" class="conditional-box hidden">
+                            <label>Cantidad Absorbedores</label>
+                            <input type="number" id="lv-shock-qty" value="0">
+                            <label>Tipo</label><select id="lv-shock-type">
+                                <option value="SHOCK-10">SHOCK-10</option>
+                                <option value="SHOCK-11">SHOCK-11</option>
+                            </select>
+                        </div>
                     </div>
-                    <div id="opts-shock" class="conditional-box hidden">
-                        <label>Cantidad Absorbedores</label>
-                        <input type="number" id="lv-shock-qty" value="0">
-                        <label>Tipo</label><select id="lv-shock-type">
-                            <option value="SHOCK-10">SHOCK-10</option>
-                            <option value="SHOCK-11">SHOCK-11</option>
+                    <div id="group-ends50" class="hidden">
+                        <label>Configuración de Extremos</label>
+                        <select id="lv-ends50-config">
+                            <option value="50-51">1× AIO-ENDS-50 + 1× AIO-ENDS-51</option>
+                            <option value="50-50">2× AIO-ENDS-50</option>
                         </select>
                     </div>
+                    <hr style="margin: 20px 0; border:0; border-top:1px solid #ddd;">
+                    <label>Elemento Intermedio (SZH)</label>
+                    <select id="lv-szh-model" onchange="drawPreview()"></select>
                 </div>
-                <div id="group-ends50" class="hidden">
-                    <label>Configuración de Extremos</label>
-                    <select id="lv-ends50-config">
-                        <option value="50-51">1× AIO-ENDS-50 + 1× AIO-ENDS-51</option>
-                        <option value="50-50">2× AIO-ENDS-50</option>
-                    </select>
-                </div>
-                <hr style="margin: 20px 0; border:0; border-top:1px solid #ddd;">
-                <label>Elemento Intermedio (SZH)</label>
-                <select id="lv-szh-model" onchange="drawPreview()"></select>
-            </div>
 
-            <div class="card" id="card-opts-sand">
-                <h2>Opciones de Instalación</h2>
-                <div id="opts-fix-sand01" class="hidden">
-                    <label>Tipo de Fijación (20 uds/base)</label>
-                    <select id="sand01-fix-type">
-                        <option value="BEF 306-VE250">Remache BEF 306-VE250</option>
-                        <option value="BBF-06.3-028-DS-A2">Roscachapa BBF-06.3-028-DS-A2</option>
-                    </select>
-                </div>
-                <div class="check-group">
-                    <input type="checkbox" id="chk-alzas">
-                    <label>¿Lleva alzas de nivelación (VL-SAND-SET / VL-20-50)?</label>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>Soporte Línea de Vida</h2>
-                <label>Estructura</label>
-                <select id="lv-support-type" onchange="toggleLvOpts(); drawPreview();">
-                    <option value="sand02">Cubierta Chapa (Sandwich/Deck)</option>
-                    <option value="poste">Poste Estructural</option>
-                </select>
-                <div id="opts-lv-chapa" class="conditional-box">
-                    <label>Tipo Chapa</label>
-                    <select id="lv-chapa-type">
-                        <option value="sandwich">Panel Sandwich</option>
-                        <option value="grecada">Grecada Simple</option>
-                        <option value="deck">Deck</option>
-                    </select>
-                    <label>Tipo de Chapa</label>
-                    <select id="lv-chapa-thick" onchange="updateMaxDistSand02(); drawPreview()">
-                        <option value="10">Chapa Fina (máx 10m entre intermedios)</option>
-                        <option value="12">Chapa Gruesa (máx 12m entre intermedios)</option>
-                    </select>
-                    <label>Distancia Máxima entre Intermedios (m)</label>
-                    <input type="number" id="lv-max-dist-sand02" value="10" min="1" max="12" step="0.5"
-                        onchange="drawPreview()" style="width:100%;">
-                    <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Puedes reducir la
-                        distancia si lo necesitas</small>
-                </div>
-                <div id="opts-lv-poste" class="conditional-box hidden">
-                    <label>Distancia Máxima entre Soportes (m)</label>
-                    <input type="number" id="lv-max-dist-poste" value="15" min="1" max="15" step="0.5"
-                        onchange="drawPreview()" style="width:100%;">
-                    <small
-                        style="display:block; margin-top:5px; margin-bottom:15px; color:#666; font-size:0.85rem;">Distancia
-                        máxima entre extremos e intermedios (máx 15m)</small>
-
-                    <div class="check-group"
-                        style="background:#e3f2fd; padding:10px; border-radius:4px; margin-bottom:15px;">
-                        <input type="checkbox" id="chk-use-posts" checked
-                            onchange="toggleUsePostsOpts(); drawPreview();">
-                        <label>Usar Postes en la Instalación</label>
+                <div class="card" id="card-opts-sand">
+                    <h2>Opciones de Instalación</h2>
+                    <div id="opts-fix-sand01" class="hidden">
+                        <label>Tipo de Fijación (20 uds/base)</label>
+                        <select id="sand01-fix-type">
+                            <option value="BEF 306-VE250">Remache BEF 306-VE250</option>
+                            <option value="BBF-06.3-028-DS-A2">Roscachapa BBF-06.3-028-DS-A2</option>
+                        </select>
                     </div>
-                    <div id="opts-with-posts">
+                    <div class="check-group">
+                        <input type="checkbox" id="chk-alzas">
+                        <label>¿Lleva alzas de nivelación (VL-SAND-SET / VL-20-50)?</label>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Soporte Línea de Vida</h2>
+                    <label>Estructura</label>
+                    <select id="lv-support-type" onchange="toggleLvOpts(); drawPreview();">
+                        <option value="sand02">Cubierta Chapa (Sandwich/Deck)</option>
+                        <option value="poste">Poste Estructural</option>
+                    </select>
+                    <div id="opts-lv-chapa" class="conditional-box">
+                        <label>Tipo Chapa</label>
+                        <select id="lv-chapa-type">
+                            <option value="sandwich">Panel Sandwich</option>
+                            <option value="grecada">Grecada Simple</option>
+                            <option value="deck">Deck</option>
+                        </select>
+                        <label>Tipo de Chapa</label>
+                        <select id="lv-chapa-thick" onchange="updateMaxDistSand02(); drawPreview()">
+                            <option value="10">Chapa Fina (máx 10m entre intermedios)</option>
+                            <option value="12">Chapa Gruesa (máx 12m entre intermedios)</option>
+                        </select>
+                        <label>Distancia Máxima entre Intermedios (m)</label>
+                        <input type="number" id="lv-max-dist-sand02" value="10" min="1" max="12" step="0.5"
+                            onchange="drawPreview()" style="width:100%;">
+                        <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Puedes reducir la
+                            distancia si lo necesitas</small>
+                    </div>
+                    <div id="opts-lv-poste" class="conditional-box hidden">
+                        <label>Distancia Máxima entre Soportes (m)</label>
+                        <input type="number" id="lv-max-dist-poste" value="15" min="1" max="15" step="0.5"
+                            onchange="drawPreview()" style="width:100%;">
+                        <small
+                            style="display:block; margin-top:5px; margin-bottom:15px; color:#666; font-size:0.85rem;">Distancia
+                            máxima entre extremos e intermedios (máx 15m)</small>
+
+                        <div class="check-group"
+                            style="background:#e3f2fd; padding:10px; border-radius:4px; margin-bottom:15px;">
+                            <input type="checkbox" id="chk-use-posts" checked
+                                onchange="toggleUsePostsOpts(); drawPreview();">
+                            <label>Usar Postes en la Instalación</label>
+                        </div>
+                        <div id="opts-with-posts">
+                            <label>Modelo Poste (STA)</label>
+                            <select id="lv-post-model" onchange="drawPreview()"></select>
+                            <label>Material Base</label>
+                            <select id="lv-base-mat">
+                                <option value="hormigon">Hormigón</option>
+                                <option value="acero">Metal</option>
+                                <option value="madera">Madera</option>
+                            </select>
+                            <div style="margin-top:10px;">
+                                <div class="check-group"><input type="checkbox" id="chk-contraplaca"><label>Requiere
+                                        Contraplaca</label></div>
+                                <div class="check-group"><input type="checkbox" id="chk-alzas-posts"><label>Requiere
+                                        Alzas de Nivelación (VL-20-50)</label></div>
+                                <div class="check-group"><input type="checkbox" id="chk-herreria"
+                                        onchange="document.getElementById('desc-herreria').classList.toggle('hidden',!this.checked)"><label>Herrería
+                                        Especial</label></div>
+                                <textarea id="desc-herreria" class="hidden" rows="2"
+                                    placeholder="Detalle..."></textarea>
+                            </div>
+                            <hr style="margin: 15px 0; border:0; border-top:1px solid #ddd;">
+                            <button class="btn-mini" style="width:100%; background:var(--accent);"
+                                onclick="toggleCustomPostsUI()">⚙️ Personalizar Postes Individuales</button>
+                            <div id="custom-posts-container" class="hidden"
+                                style="margin-top:10px; padding:10px; background:#fff3cd; border-radius:4px;">
+                                <p style="font-size:0.85rem; margin:0 0 10px; color:#856404;">Selecciona postes
+                                    específicos
+                                    para usar un modelo diferente:</p>
+                                <div id="custom-posts-list"></div>
+                            </div>
+                        </div>
+                        <div id="opts-without-posts" class="hidden"
+                            style="padding:15px; background:#fff3cd; border-radius:4px; margin-top:10px;">
+                            <p style="font-size:0.9rem; margin:0; color:#856404;"><strong>⚠️ Instalación Sin
+                                    Postes:</strong> Se usarán directamente los elementos de extremo (ENDS) sin postes
+                                estructurales.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tech-rail" class="hidden">
+                <div class="card">
+                    <h2>Configuración Sistema Rail (TAURUS)</h2>
+                    <label>Longitud Total (m)</label>
+                    <input type="number" id="rail-longitud" value="20" min="1" max="500" step="0.5">
+
+                    <div class="check-group" style="margin-top:15px;">
+                        <input type="checkbox" id="rail-cerrada">
+                        <label>Línea Cerrada (bucle)</label>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Tipo de Soporte</h2>
+                    <label>Estructura</label>
+                    <select id="rail-soporte-tipo" onchange="toggleRailSoporteOpts()">
+                        <option value="bef">Fijación Directa (BEF)</option>
+                        <option value="sta">Postes Estructurales (STA)</option>
+                        <option value="bef-eb">Fijación Acero (BEF-411 + EB)</option>
+                    </select>
+
+                    <div id="opts-rail-bef">
+                        <label>Modelo BEF</label>
+                        <select id="rail-bef-model"></select>
+                    </div>
+
+                    <div id="opts-rail-sta" class="hidden">
                         <label>Modelo Poste (STA)</label>
-                        <select id="lv-post-model" onchange="drawPreview()"></select>
-                        <label>Material Base</label>
-                        <select id="lv-base-mat">
-                            <option value="hormigon">Hormigón</option>
-                            <option value="acero">Metal</option>
-                            <option value="madera">Madera</option>
-                        </select>
-                        <div style="margin-top:10px;">
-                            <div class="check-group"><input type="checkbox" id="chk-contraplaca"><label>Requiere
-                                    Contraplaca</label></div>
-                            <div class="check-group"><input type="checkbox" id="chk-alzas-posts"><label>Requiere
-                                    Alzas de Nivelación (VL-20-50)</label></div>
-                            <div class="check-group"><input type="checkbox" id="chk-herreria"
-                                    onchange="document.getElementById('desc-herreria').classList.toggle('hidden',!this.checked)"><label>Herrería
-                                    Especial</label></div>
-                            <textarea id="desc-herreria" class="hidden" rows="2" placeholder="Detalle..."></textarea>
-                        </div>
-                        <hr style="margin: 15px 0; border:0; border-top:1px solid #ddd;">
-                        <button class="btn-mini" style="width:100%; background:var(--accent);"
-                            onclick="toggleCustomPostsUI()">⚙️ Personalizar Postes Individuales</button>
-                        <div id="custom-posts-container" class="hidden"
-                            style="margin-top:10px; padding:10px; background:#fff3cd; border-radius:4px;">
-                            <p style="font-size:0.85rem; margin:0 0 10px; color:#856404;">Selecciona postes
-                                específicos
-                                para usar un modelo diferente:</p>
-                            <div id="custom-posts-list"></div>
+                        <select id="rail-sta-model"></select>
+                        <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Se añadirá
+                            automáticamente
+                            TAURUS-BEF-30</small>
+                    </div>
+
+                    <div id="opts-rail-bef-eb" class="hidden">
+                        <label>Soporte EB</label>
+                        <select id="rail-eb-model"></select>
+                        <label>Fijación BEF Adicional</label>
+                        <select id="rail-bef-adicional"></select>
+                        <div class="check-group" style="margin-top:10px;">
+                            <input type="checkbox" id="rail-varilla-m16">
+                            <label>Añadir 0.5x Varilla M16 por punto</label>
                         </div>
                     </div>
-                    <div id="opts-without-posts" class="hidden"
-                        style="padding:15px; background:#fff3cd; border-radius:4px; margin-top:10px;">
-                        <p style="font-size:0.9rem; margin:0; color:#856404;"><strong>⚠️ Instalación Sin
-                                Postes:</strong> Se usarán directamente los elementos de extremo (ENDS) sin postes
-                            estructurales.</p>
+
+                    <label style="margin-top:15px;">Distancia Máxima entre Soportes (m)</label>
+                    <input type="number" id="rail-dist-max" value="3" min="1" max="6" step="0.1">
+                    <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Máximo recomendado:
+                        6m</small>
+                </div>
+
+                <div class="card">
+                    <h2>Componentes del Sistema</h2>
+
+                    <div class="check-group">
+                        <input type="checkbox" id="rail-usar-6m" checked>
+                        <label>Priorizar raíles de 6m</label>
                     </div>
-                </div>
-            </div>
-        </div>
+                    <small style="display:block; margin-bottom:15px; color:#666; font-size:0.85rem;">Si no, solo se
+                        usarán
+                        raíles de 3m</small>
 
-        <div id="tech-rail" class="hidden">
-            <div class="card">
-                <h2>Configuración Sistema Rail (TAURUS)</h2>
-                <label>Longitud Total (m)</label>
-                <input type="number" id="rail-longitud" value="20" min="1" max="500" step="0.5">
+                    <label>Tipo de Carro Deslizador</label>
+                    <select id="rail-carro-tipo"></select>
 
-                <div class="check-group" style="margin-top:15px;">
-                    <input type="checkbox" id="rail-cerrada">
-                    <label>Línea Cerrada (bucle)</label>
-                </div>
-            </div>
+                    <label>Tipo de Unión de Carril</label>
+                    <select id="rail-union-tipo"></select>
 
-            <div class="card">
-                <h2>Tipo de Soporte</h2>
-                <label>Estructura</label>
-                <select id="rail-soporte-tipo" onchange="toggleRailSoporteOpts()">
-                    <option value="bef">Fijación Directa (BEF)</option>
-                    <option value="sta">Postes Estructurales (STA)</option>
-                    <option value="bef-eb">Fijación Acero (BEF-411 + EB)</option>
-                </select>
-
-                <div id="opts-rail-bef">
-                    <label>Modelo BEF</label>
-                    <select id="rail-bef-model"></select>
-                </div>
-
-                <div id="opts-rail-sta" class="hidden">
-                    <label>Modelo Poste (STA)</label>
-                    <select id="rail-sta-model"></select>
-                    <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Se añadirá
-                        automáticamente
-                        TAURUS-BEF-30</small>
-                </div>
-
-                <div id="opts-rail-bef-eb" class="hidden">
-                    <label>Soporte EB</label>
-                    <select id="rail-eb-model"></select>
-                    <label>Fijación BEF Adicional</label>
-                    <select id="rail-bef-adicional"></select>
                     <div class="check-group" style="margin-top:10px;">
-                        <input type="checkbox" id="rail-varilla-m16">
-                        <label>Añadir 0.5x Varilla M16 por punto</label>
+                        <input type="checkbox" id="rail-optimizar-ve5" checked>
+                        <label>Optimizar con packs VE5 (VB-10/VB-12)</label>
                     </div>
+                    <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Divide uniones en packs
+                        de
+                        5 +
+                        unidades sueltas</small>
                 </div>
-
-                <label style="margin-top:15px;">Distancia Máxima entre Soportes (m)</label>
-                <input type="number" id="rail-dist-max" value="3" min="1" max="6" step="0.1">
-                <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Máximo recomendado:
-                    6m</small>
             </div>
 
-            <div class="card">
-                <h2>Componentes del Sistema</h2>
-
-                <div class="check-group">
-                    <input type="checkbox" id="rail-usar-6m" checked>
-                    <label>Priorizar raíles de 6m</label>
-                </div>
-                <small style="display:block; margin-bottom:15px; color:#666; font-size:0.85rem;">Si no, solo se
-                    usarán
-                    raíles de 3m</small>
-
-                <label>Tipo de Carro Deslizador</label>
-                <select id="rail-carro-tipo"></select>
-
-                <label>Tipo de Unión de Carril</label>
-                <select id="rail-union-tipo"></select>
-
-                <div class="check-group" style="margin-top:10px;">
-                    <input type="checkbox" id="rail-optimizar-ve5" checked>
-                    <label>Optimizar con packs VE5 (VB-10/VB-12)</label>
-                </div>
-                <small style="display:block; margin-top:5px; color:#666; font-size:0.85rem;">Divide uniones en packs
-                    de
-                    5 +
-                    unidades sueltas</small>
-            </div>
-        </div>
-
-        <div id="tech-attika" class="hidden">
-            <div class="card">
-                <h2>Configuración Attika</h2>
-                <label>Lado de los Postes</label>
-                <select id="a-side" onchange="drawPreview()">
-                    <option value="right">Derecha (Interior)</option>
-                    <option value="left">Izquierda</option>
-                </select>
-                <label style="margin-top:15px;">Normativa</label>
-                <div class="radio-group" style="margin-top:5px;">
-                    <div class="radio-opt">
-                        <input type="radio" name="a-norm" id="a-norm-13374" value="2.5" checked
-                            onchange="drawPreview()">
-                        <label for="a-norm-13374">DIN 13374:2019 (Max 2,5m)</label>
-                    </div>
-                    <div class="radio-opt">
-                        <input type="radio" name="a-norm" id="a-norm-14122" value="1.5" onchange="drawPreview()">
-                        <label for="a-norm-14122">DIN 14122-3:2016 (Max 1,5m)</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="tech-lightflex" class="hidden">
-            <div class="card config-card">
-                <h2>Configuración LIGHT-FLEX</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div><label>Cantidad Lucernarios</label><input type="number" id="lf-qty" value="1" min="1"
-                            oninput="drawPreview()"></div>
-                    <div><label>Fijación Perimetral</label>
-                        <select id="lf-bracket-type" onchange="drawPreview()">
-                            <option value="LIGHT-FLEX-BEF-02-VZ">BEF-02 (>= 5mm)</option>
-                            <option value="LIGHT-FLEX-BEF-01-VZ">BEF-01 (<= 5mm)</option>
-                        </select>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
-                    <div><label>Largo Exterior (m)</label><input type="number" id="lf-len" value="3.5" step="0.1"
-                            oninput="drawPreview()"></div>
-                    <div><label>Ancho Exterior (m)</label><input type="number" id="lf-width" value="2.4" step="0.1"
-                            oninput="drawPreview()"></div>
-                </div>
-
-                <h3 style="margin-top:15px;">Barras de Rigidización (RWA)</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
-                    <div><label style="font-size:0.7rem;">RWA-1165</label><input type="number" id="lf-rwa-1165"
-                            value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
-                    <div><label style="font-size:0.7rem;">RWA-1525</label><input type="number" id="lf-rwa-1525"
-                            value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
-                    <div><label style="font-size:0.7rem;">RWA-1900</label><input type="number" id="lf-rwa-1900"
-                            value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
-                </div>
-
-                <div id="lf-rwa-advanced" class="conditional-box hidden">
-                    <label>Disposición de Barras (2 uds)</label>
-                    <select id="lf-rwa-mode" onchange="toggleLfRwaDetails(); drawPreview();">
-                        <option value="standard">Estándar (Sustituye Perímetro)</option>
-                        <option value="center">Centro Agrupado (Split)</option>
+            <div id="tech-attika" class="hidden">
+                <div class="card">
+                    <h2>Configuración Attika</h2>
+                    <label>Lado de los Postes</label>
+                    <select id="a-side" onchange="drawPreview()">
+                        <option value="right">Derecha (Interior)</option>
+                        <option value="left">Izquierda</option>
                     </select>
-                    <div id="lf-rwa-split-opts" class="hidden" style="margin-top:10px;">
-                        <label>Gap (mm)</label><input type="number" id="lf-rwa-gap" value="100" oninput="drawPreview()">
-                        <label>División</label>
-                        <select id="lf-rwa-axis" onchange="drawPreview()">
-                            <option value="L">Dividir Largo (Verticales)</option>
-                            <option value="W">Dividir Ancho (Horizontales)</option>
-                        </select>
-                    </div>
-                    <div id="lf-rwa-standard-opts" style="margin-top:10px;">
-                        <label>Ubicación de Barras</label>
-                        <select id="lf-rwa-loc" onchange="drawPreview()">
-                            <option value="long_side">Lados Largos</option>
-                            <option value="short_side">Lados Cortos</option>
-                        </select>
+                    <label style="margin-top:15px;">Normativa</label>
+                    <div class="radio-group" style="margin-top:5px;">
+                        <div class="radio-opt">
+                            <input type="radio" name="a-norm" id="a-norm-13374" value="2.5" checked
+                                onchange="drawPreview()">
+                            <label for="a-norm-13374">DIN 13374:2019 (Max 2,5m)</label>
+                        </div>
+                        <div class="radio-opt">
+                            <input type="radio" name="a-norm" id="a-norm-14122" value="1.5" onchange="drawPreview()">
+                            <label for="a-norm-14122">DIN 14122-3:2016 (Max 1,5m)</label>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card">
-            <h2>Accesos, Seguridad, Varios</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div><label>VARIOS PLUMA</label><input type="number" id="v-pluma" value="0" min="0"></div>
-                <div><label>PEMP</label><input type="number" id="v-pemp" value="0" min="0"></div>
-                <div><label>VARIOS ATXABASTAR</label><input type="number" id="v-atxabastar" value="0" min="0"></div>
-                <div><label>VARIOS ESCALERA</label><input type="number" id="v-escalera" value="0" min="0"></div>
-                <div><label>VARIOS GANCHO ESCALERA</label><input type="number" id="v-gancho-escalera" value="0" min="0">
+            <div id="tech-lightflex" class="hidden">
+                <div class="card config-card">
+                    <h2>Configuración LIGHT-FLEX</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div><label>Cantidad Lucernarios</label><input type="number" id="lf-qty" value="1" min="1"
+                                oninput="drawPreview()"></div>
+                        <div><label>Fijación Perimetral</label>
+                            <select id="lf-bracket-type" onchange="drawPreview()">
+                                <option value="LIGHT-FLEX-BEF-02-VZ">BEF-02 (>= 5mm)</option>
+                                <option value="LIGHT-FLEX-BEF-01-VZ">BEF-01 (<= 5mm)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
+                        <div><label>Largo Exterior (m)</label><input type="number" id="lf-len" value="3.5" step="0.1"
+                                oninput="drawPreview()"></div>
+                        <div><label>Ancho Exterior (m)</label><input type="number" id="lf-width" value="2.4" step="0.1"
+                                oninput="drawPreview()"></div>
+                    </div>
+
+                    <h3 style="margin-top:15px;">Barras de Rigidización (RWA)</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
+                        <div><label style="font-size:0.7rem;">RWA-1165</label><input type="number" id="lf-rwa-1165"
+                                value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
+                        <div><label style="font-size:0.7rem;">RWA-1525</label><input type="number" id="lf-rwa-1525"
+                                value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
+                        <div><label style="font-size:0.7rem;">RWA-1900</label><input type="number" id="lf-rwa-1900"
+                                value="0" min="0" oninput="toggleLfRwaMode(); drawPreview();"></div>
+                    </div>
+
+                    <div id="lf-rwa-advanced" class="conditional-box hidden">
+                        <label>Disposición de Barras (2 uds)</label>
+                        <select id="lf-rwa-mode" onchange="toggleLfRwaDetails(); drawPreview();">
+                            <option value="standard">Estándar (Sustituye Perímetro)</option>
+                            <option value="center">Centro Agrupado (Split)</option>
+                        </select>
+                        <div id="lf-rwa-split-opts" class="hidden" style="margin-top:10px;">
+                            <label>Gap (mm)</label><input type="number" id="lf-rwa-gap" value="100"
+                                oninput="drawPreview()">
+                            <label>División</label>
+                            <select id="lf-rwa-axis" onchange="drawPreview()">
+                                <option value="L">Dividir Largo (Verticales)</option>
+                                <option value="W">Dividir Ancho (Horizontales)</option>
+                            </select>
+                        </div>
+                        <div id="lf-rwa-standard-opts" style="margin-top:10px;">
+                            <label>Ubicación de Barras</label>
+                            <select id="lf-rwa-loc" onchange="drawPreview()">
+                                <option value="long_side">Lados Largos</option>
+                                <option value="short_side">Lados Cortos</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div><label>VARIOS HERRERÍA JOSU</label><input type="number" id="v-herreria-josu" value="0" min="0">
+            </div>
+
+            <div class="card">
+                <h2>Accesos, Seguridad, Varios</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div><label>VARIOS PLUMA</label><input type="number" id="v-pluma" value="0" min="0"></div>
+                    <div><label>PEMP</label><input type="number" id="v-pemp" value="0" min="0"></div>
+                    <div><label>VARIOS ATXABASTAR</label><input type="number" id="v-atxabastar" value="0" min="0"></div>
+                    <div><label>VARIOS ESCALERA</label><input type="number" id="v-escalera" value="0" min="0"></div>
+                    <div><label>VARIOS GANCHO ESCALERA</label><input type="number" id="v-gancho-escalera" value="0"
+                            min="0">
+                    </div>
+                    <div><label>VARIOS HERRERÍA JOSU</label><input type="number" id="v-herreria-josu" value="0" min="0">
+                    </div>
+                    <div><label>VARIOS PELDAÑO</label><input type="number" id="v-peldano" value="0" min="0"></div>
+                    <div><label>VARIOS SELLADO</label><input type="number" id="v-sellado" value="0" min="0"></div>
                 </div>
-                <div><label>VARIOS PELDAÑO</label><input type="number" id="v-peldano" value="0" min="0"></div>
-                <div><label>VARIOS SELLADO</label><input type="number" id="v-sellado" value="0" min="0"></div>
             </div>
         </div>
     </div>
@@ -3430,8 +3434,10 @@
 
         // --- CALCULATE BARANDILLA BOM ---
         function calculateBarandillaBOM() {
+            console.log("DEBUG: calculateBarandillaBOM called");
             const bom = {};
             const tramosElements = document.querySelectorAll('.b-tramo');
+            console.log("DEBUG: tramos found:", tramosElements.length);
 
             // Validación defensiva
             if (!tramosElements || tramosElements.length === 0) {
@@ -4053,6 +4059,12 @@
 
         // --- EXPORT TO EXCEL ---
         function exportToExcel() {
+            console.log("DEBUG: exportToExcel called");
+            console.log("DEBUG: currentSystem:", currentSystem);
+            if (typeof XLSX === 'undefined') {
+                alert("Error: Biblioteca XLSX no cargada properly.");
+                return;
+            }
             let bom = {};
 
             if (currentSystem === 'rail') {
