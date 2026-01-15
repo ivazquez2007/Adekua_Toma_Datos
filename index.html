@@ -746,6 +746,10 @@
                         <input type="checkbox" id="chk-alzas">
                         <label>¿Lleva alzas de nivelación (VL-SAND-SET / VL-20-50)?</label>
                     </div>
+                    <div class="check-group">
+                        <input type="checkbox" id="chk-shared-support">
+                        <label>¿Poste/Soporte Inicial Compartido? (Resta 1 soporte)</label>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -3614,7 +3618,7 @@
                     let totalBases = 2 + countSZH + countCurves + countExtras;
 
                     // Shared Support Check
-                    if (document.getElementById('chk-shared-support').checked) {
+                    if (document.getElementById('chk-shared-support')?.checked) {
                         totalBases -= 1;
                     }
 
@@ -3740,7 +3744,7 @@
                     // Logic with POSTS (Default or Custom)
                     // We need to count by model
                     const defaultModel = document.getElementById('lv-post-model').value;
-                    const isShared = document.getElementById('chk-shared-support').checked;
+                    const isShared = document.getElementById('chk-shared-support')?.checked;
 
                     // 1. Structural Nodes (Start, Corners, End)
                     // Total nodes = tramosData.length + 1
