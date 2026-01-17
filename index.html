@@ -1181,8 +1181,8 @@
                     </div>
                 </div>
 
-                <button class="btn-mini" style="background:var(--success); width:100%;" onclick="fixOverlay()">✅
-                    Fijar Plano</button>
+                <button class="btn-mini" style="background:var(--success); width:100%; display:none;"
+                    onclick="fixOverlay()">✅ Fijar Plano</button>
                 <p style="font-size:0.7rem; color:#666; margin:5px 0 0 0;">Arrastra para mover. Usa las barras para
                     escalar y rotar en 3D.</p>
             </div>
@@ -3534,7 +3534,40 @@
         };
 
         function clearDraw() { imgObj.src = imgObj.src; setTimeout(renderEditor, 50); } // Reset to last saved state
-        function savePhoto() { if (!photoCanvas.width) return; savedPhotos.push(photoCanvas.toDataURL('image/jpeg', 0.6)); const i = document.createElement('img'); i.src = savedPhotos[savedPhotos.length - 1]; i.className = 'thumb'; document.getElementById('gallery-grid').appendChild(i); document.getElementById('photo-count').innerText = savedPhotos.length; }
+        async function savePhoto() {
+            if (!photoCanvas.width) return;
+
+            let dataUrl;
+
+            // Si hay un plano superpuesto activo, capturamos todo el contenedor (WYSIWYG)
+            if (overlay.active && overlay.img) {
+                const element = document.getElementById('canvas-container');
+                try {
+                    // Usamos html2canvas para capturar la composición
+                    const canvas = await html2canvas(element, {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: null,
+                        logging: false
+                    });
+                    dataUrl = canvas.toDataURL('image/jpeg', 0.8); // Mejor calidad para el guardado final
+                } catch (err) {
+                    console.error("Error al capturar superposición:", err);
+                    alert("Hubo un error al procesar la superposición. Se guardará la imagen base.");
+                    dataUrl = photoCanvas.toDataURL('image/jpeg', 0.6);
+                }
+            } else {
+                // Si no hay overlay, guardamos el canvas normal como siempre
+                dataUrl = photoCanvas.toDataURL('image/jpeg', 0.6);
+            }
+
+            savedPhotos.push(dataUrl);
+            const i = document.createElement('img');
+            i.src = savedPhotos[savedPhotos.length - 1];
+            i.className = 'thumb';
+            document.getElementById('gallery-grid').appendChild(i);
+            document.getElementById('photo-count').innerText = savedPhotos.length;
+        }
 
         // --- CALCULATE BARANDILLA BOM ---
         function calculateBarandillaBOM() {
