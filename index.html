@@ -1113,10 +1113,12 @@
 
     <div id="tab-fotos" class="section">
         <div class="card" style="text-align: center;">
-            <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none"
-                onchange="loadPhoto(event)">
-            <button class="btn-full" style="background:#555; color:white; margin-bottom:10px;"
-                onclick="document.getElementById('cam-input').click()">📷 Tomar Foto</button>
+            <label class="btn-full"
+                style="background:#555; color:white; margin-bottom:10px; display:block; cursor:pointer; line-height:normal;">
+                📷 Tomar Foto
+                <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none"
+                    onchange="loadPhoto(event)">
+            </label>
 
             <div id="canvas-container" style="position:relative; overflow:hidden; border:1px solid #ccc;">
                 <canvas id="editor"></canvas>
