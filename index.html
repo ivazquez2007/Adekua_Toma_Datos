@@ -1122,6 +1122,8 @@
                 <!-- 3D Overlay Element -->
                 <img id="overlay-3d"
                     style="display:none; position:absolute; top:0; left:0; pointer-events:none; transform-origin: 0 0; z-index:9999; margin:0; padding:0; border:none; max-width:none; max-height:none; box-sizing:content-box;">
+                <canvas id="draw-canvas"
+                    style="position:absolute; top:0; left:0; z-index:10001; pointer-events:auto; touch-action:none;"></canvas>
             </div>
 
             <!-- Controles de Escala de Foto -->
@@ -1152,22 +1154,22 @@
                     <label style="font-size:0.85rem; font-weight:bold; margin:0 0 8px 0; display:block; color:#555;">🔄
                         Rotación 3D</label>
 
-                    <!-- Rotate X (HIDDEN: Not supported in 2D Fix) -->
-                    <div style="display:none; gap:10px; align-items:center; margin:5px 0;">
+                    <!-- Rotate X -->
+                    <div style="display:flex; gap:10px; align-items:center; margin:5px 0;">
                         <span style="font-size:0.75rem; min-width:55px; color:#666;">↔️ Eje X:</span>
                         <input type="range" id="overlay-rotateX" min="-180" max="180" step="1" value="0"
                             oninput="updateOverlayRotation()" style="flex:1;">
                         <span id="overlay-rotateX-value"
-                            style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
+                            style="font-size:0.75rem; min-width:35px; text-align:right; font-weight:bold;">0°</span>
                     </div>
 
-                    <!-- Rotate Y (HIDDEN: Not supported in 2D Fix) -->
-                    <div style="display:none; gap:10px; align-items:center; margin:5px 0;">
+                    <!-- Rotate Y -->
+                    <div style="display:flex; gap:10px; align-items:center; margin:5px 0;">
                         <span style="font-size:0.75rem; min-width:55px; color:#666;">↕️ Eje Y:</span>
                         <input type="range" id="overlay-rotateY" min="-180" max="180" step="1" value="0"
                             oninput="updateOverlayRotation()" style="flex:1;">
                         <span id="overlay-rotateY-value"
-                            style="font-size:0.75rem; min-width:45px; font-weight:bold; color:var(--purple);">0°</span>
+                            style="font-size:0.75rem; min-width:35px; text-align:right; font-weight:bold;">0°</span>
                     </div>
 
                     <!-- Rotate Z -->
@@ -2950,6 +2952,8 @@
         // --- FOTOS & OVERLAY ---
         const photoCanvas = document.getElementById('editor');
         const photoCtx = photoCanvas.getContext('2d');
+        const drawCanvas = document.getElementById('draw-canvas');
+        const drawCtx = drawCanvas.getContext('2d');
 
         function loadPhoto(e) {
             if (e.target.files[0]) {
@@ -2960,6 +2964,8 @@
                         const scale = Math.min(800 / imgObj.width, 1);
                         photoCanvas.width = imgObj.width * scale;
                         photoCanvas.height = imgObj.height * scale;
+                        drawCanvas.width = photoCanvas.width;
+                        drawCanvas.height = photoCanvas.height;
                         photoScale = 1.0;
                         document.getElementById('photo-scale').value = '1';
                         document.getElementById('photo-scale-value').innerText = '100%';
@@ -3155,9 +3161,11 @@
                 overlay3D.style.top = visualY + 'px';
                 overlay3D.style.zIndex = '99999';
 
-                // Aplicar transformación 2D (Para coincidir con fixOverlay)
+                // Aplicar transformación 3D Completa
                 const transform = `
                     translate3d(0,0,0)
+                    rotateX(${overlay.rotateX}deg)
+                    rotateY(${overlay.rotateY}deg)
                     rotateZ(${overlay.rotateZ}deg)
                 `;
 
@@ -3169,31 +3177,26 @@
             }
         }
 
-        // --- UNDO FUNCTIONALITY ---
+        // --- UNDO FUNCTIONALITY (Tracks Drawing Canvas) ---
         function saveUndoState() {
-            const state = photoCanvas.toDataURL();
+            const state = drawCanvas.toDataURL();
             undoHistory.push(state);
 
-            // Limitar el historial al máximo de pasos
             if (undoHistory.length > MAX_UNDO_STEPS) {
-                undoHistory.shift(); // Eliminar el más antiguo
+                undoHistory.shift();
             }
-
-            // Habilitar el botón de deshacer
             document.getElementById('undo-btn').disabled = false;
         }
 
         function undoAnnotation() {
             if (undoHistory.length === 0) return;
 
-            // Restaurar el estado anterior
             const previousState = undoHistory.pop();
             const img = new Image();
             img.onload = () => {
-                photoCtx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
-                photoCtx.drawImage(img, 0, 0);
+                drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                drawCtx.drawImage(img, 0, 0);
 
-                // Deshabilitar el botón si no hay más historial
                 if (undoHistory.length === 0) {
                     document.getElementById('undo-btn').disabled = true;
                 }
@@ -3368,1034 +3371,1039 @@
                     photoCtx.moveTo(x1, y1);
                     photoCtx.lineTo(x2, y2);
                     photoCtx.stroke();
-                    break;
+                    drawCtx.strokeStyle = drawColor;
+                    drawCtx.fillStyle = drawColor;
+                    drawCtx.lineWidth = lineWidth;
+                    drawCtx.lineCap = "round";
 
-                case 'circle':
-                    const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                    photoCtx.beginPath();
-                    photoCtx.arc(x1, y1, radius, 0, 2 * Math.PI);
-                    photoCtx.stroke();
-                    break;
+                    const w = x2 - x1;
+                    const h = y2 - y1;
 
-                case 'square':
-                    const width = x2 - x1;
-                    const height = y2 - y1;
-                    photoCtx.beginPath();
-                    photoCtx.rect(x1, y1, width, height);
-                    photoCtx.stroke();
-                    break;
+                    drawCtx.strokeStyle = drawColor;
+                    drawCtx.lineWidth = lineWidth;
+                    drawCtx.font = `${textSize}px Arial`;
+                    drawCtx.fillStyle = drawColor;
 
-                case 'triangle':
-                    const baseWidth = x2 - x1;
-                    const topX = x1 + baseWidth / 2;
-                    const topY = y2;
-                    photoCtx.beginPath();
-                    photoCtx.moveTo(x1, y1); // Bottom left
-                    photoCtx.lineTo(x2, y1); // Bottom right
-                    photoCtx.lineTo(topX, topY); // Top
-                    photoCtx.closePath();
-                    photoCtx.stroke();
-                    break;
+                    drawCtx.beginPath();
 
-                case 'x':
-                    photoCtx.beginPath();
-                    photoCtx.moveTo(x1, y1);
-                    photoCtx.lineTo(x2, y2);
-                    photoCtx.moveTo(x2, y1);
-                    photoCtx.lineTo(x1, y2);
-                    photoCtx.stroke();
-                    break;
+                    if (drawTool === 'line') {
+                        drawCtx.moveTo(x1, y1);
+                        drawCtx.lineTo(x2, y2);
+                        drawCtx.stroke();
+                    } else if (drawTool === 'circle') {
+                        const r = Math.sqrt(w * w + h * h);
+                        drawCtx.arc(x1, y1, r, 0, 2 * Math.PI);
+                        drawCtx.stroke();
+                    } else if (drawTool === 'square') {
+                        drawCtx.strokeRect(x1, y1, w, h);
+                    } else if (drawTool === 'triangle') {
+                        drawCtx.moveTo(x1, y1 - h);
+                        drawCtx.lineTo(x1 - w, y1 + h);
+                        drawCtx.lineTo(x1 + w, y1 + h);
+                        drawCtx.closePath();
+                        drawCtx.stroke();
+                    } else if (drawTool === 'x') {
+                        const s = 10;
+                        drawCtx.moveTo(x2 - s, y2 - s);
+                        drawCtx.lineTo(x2 + s, y2 + s);
+                        drawCtx.moveTo(x2 + s, y2 - s);
+                        drawCtx.lineTo(x2 - s, y2 + s);
+                        drawCtx.stroke();
+                    }
+                // Text is handled by click, not drag
             }
-        }
 
-        function drawTextOnCanvas(x, y) {
-            const text = document.getElementById('text-input').value;
-            if (!text) {
-                alert('Por favor escribe un texto primero');
-                return;
+            function addTextAnnotation(x, y) {
+                saveUndoState();
+                const text = document.getElementById('text-input').value;
+                if (!text) return;
+                drawCtx.font = `${textSize}px Arial`;
+                drawCtx.fillStyle = drawColor;
+                drawCtx.fillText(text, x, y);
             }
-            photoCtx.font = `${textSize}px Arial`;
-            photoCtx.fillStyle = drawColor;
-            photoCtx.fillText(text, x, y);
-            // Guardar el estado actual
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = photoCanvas.width;
-            tempCanvas.height = photoCanvas.height;
-            const tCtx = tempCanvas.getContext('2d');
-            tCtx.drawImage(photoCanvas, 0, 0);
-            imgObj.src = tempCanvas.toDataURL();
-        }
 
-        // --- INTERACCION EDITOR ---
-        let startX, startY, snapshot;
+            // --- INTERACCION EDITOR ---
+            let startX, startY, snapshot;
 
-        // Mouse Events
-        photoCanvas.onmousedown = e => {
-            if (overlay.active) {
-                overlay.isDragging = true;
-                // Convertir de espacio visual a espacio interno del canvas
-                const scaleX = photoCanvas.width / photoCanvas.clientWidth;
-                const scaleY = photoCanvas.height / photoCanvas.clientHeight;
+            // --- CANVAS EVENTS (Attached to TOP LAYER: drawCanvas) ---
+            let isDrawing = false;
+
+            drawCanvas.onmousedown = e => {
+                const scaleX = drawCanvas.width / drawCanvas.clientWidth;
+                const scaleY = drawCanvas.height / drawCanvas.clientHeight;
                 const internalX = e.offsetX * scaleX;
                 const internalY = e.offsetY * scaleY;
-                startX = internalX - overlay.x;
-                startY = internalY - overlay.y;
-            } else {
-                // Guardar estado antes de dibujar
-                saveUndoState();
 
-                // Si es texto, dibujarlo inmediatamente
-                if (drawTool === 'text') {
-                    drawTextOnCanvas(e.offsetX, e.offsetY);
-                } else {
-                    isDrawing = true;
-                    startX = e.offsetX;
-                    startY = e.offsetY;
-                    snapshot = photoCtx.getImageData(0, 0, photoCanvas.width, photoCanvas.height);
+                if (overlay.active && overlay.img) {
+                    const w = overlay.img.width * overlay.scale;
+                    const h = overlay.img.height * overlay.scale;
+                    // Strict hit test
+                    if (internalX >= overlay.x && internalX <= overlay.x + w && internalY >= overlay.y && internalY <= overlay.y + h) {
+                        overlay.isDragging = true;
+                        // Calculate offset so we don't snap to corner
+                        startX = internalX - overlay.x;
+                        startY = internalY - overlay.y;
+                        return;
+                    }
                 }
-            }
-        };
 
-        photoCanvas.onmousemove = e => {
-            if (overlay.active && overlay.isDragging) {
-                // Convertir de espacio visual a espacio interno del canvas
-                const scaleX = photoCanvas.width / photoCanvas.clientWidth;
-                const scaleY = photoCanvas.height / photoCanvas.clientHeight;
+                if (drawTool === 'text') {
+                    addTextAnnotation(e.offsetX, e.offsetY);
+                } else {
+                    saveUndoState();
+                    isDrawing = true;
+                    startX = internalX;
+                    startY = internalY;
+
+                    snapshot = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+                }
+            };
+
+            drawCanvas.onmousemove = e => {
+                const scaleX = drawCanvas.width / drawCanvas.clientWidth;
+                const scaleY = drawCanvas.height / drawCanvas.clientHeight;
                 const internalX = e.offsetX * scaleX;
                 const internalY = e.offsetY * scaleY;
-                overlay.x = internalX - startX;
-                overlay.y = internalY - startY;
-                renderEditor();
-            } else if (isDrawing) {
-                photoCtx.putImageData(snapshot, 0, 0);
-                drawShape(startX, startY, e.offsetX, e.offsetY);
-            }
-        };
 
-        photoCanvas.onmouseup = () => {
-            isDrawing = false;
-            overlay.isDragging = false;
-        };
-
-        // Touch Events
-        photoCanvas.ontouchstart = e => {
-            const r = photoCanvas.getBoundingClientRect();
-            const tx = e.touches[0].clientX - r.left;
-            const ty = e.touches[0].clientY - r.top;
-            if (overlay.active) {
-                overlay.isDragging = true;
-                // Convertir de espacio visual a espacio interno del canvas
-                const scaleX = photoCanvas.width / photoCanvas.clientWidth;
-                const scaleY = photoCanvas.height / photoCanvas.clientHeight;
-                const internalX = tx * scaleX;
-                const internalY = ty * scaleY;
-                startX = internalX - overlay.x;
-                startY = internalY - overlay.y;
-            } else {
-                // Guardar estado antes de dibujar
-                saveUndoState();
-
-                // Si es texto, dibujarlo inmediatamente
-                if (drawTool === 'text') {
-                    drawTextOnCanvas(tx, ty);
-                } else {
-                    isDrawing = true;
-                    startX = tx;
-                    startY = ty;
-                    snapshot = photoCtx.getImageData(0, 0, photoCanvas.width, photoCanvas.height);
+                if (overlay.active && overlay.isDragging) {
+                    overlay.x = internalX - startX;
+                    overlay.y = internalY - startY;
+                    renderEditor();
+                } else if (isDrawing) {
+                    drawCtx.putImageData(snapshot, 0, 0);
+                    drawShape(startX, startY, internalX, internalY);
                 }
-            }
-        };
+            };
 
-        photoCanvas.ontouchmove = e => {
-            e.preventDefault();
-            const r = photoCanvas.getBoundingClientRect();
-            const tx = e.touches[0].clientX - r.left;
-            const ty = e.touches[0].clientY - r.top;
-            if (overlay.active && overlay.isDragging) {
-                // Convertir de espacio visual a espacio interno del canvas
-                const scaleX = photoCanvas.width / photoCanvas.clientWidth;
-                const scaleY = photoCanvas.height / photoCanvas.clientHeight;
+            drawCanvas.onmouseup = () => {
+                isDrawing = false;
+                overlay.isDragging = false;
+            };
+
+            // Touch events adaptation (Simplified)
+            drawCanvas.ontouchstart = e => {
+                const r = drawCanvas.getBoundingClientRect();
+                const tx = e.touches[0].clientX - r.left;
+                const ty = e.touches[0].clientY - r.top;
+
+                const scaleX = drawCanvas.width / drawCanvas.clientWidth;
+                const scaleY = drawCanvas.height / drawCanvas.clientHeight;
                 const internalX = tx * scaleX;
                 const internalY = ty * scaleY;
-                overlay.x = internalX - startX;
-                overlay.y = internalY - startY;
-                renderEditor();
-            } else if (isDrawing) {
-                photoCtx.putImageData(snapshot, 0, 0);
-                drawShape(startX, startY, tx, ty);
+
+                if (overlay.active) {
+                    // Hit test
+                    const w = overlay.img.width * overlay.scale;
+                    const h = overlay.img.height * overlay.scale;
+                    if (internalX >= overlay.x && internalX <= overlay.x + w && internalY >= overlay.y && internalY <= overlay.y + h) {
+                        overlay.isDragging = true;
+                        startX = internalX - overlay.x;
+                        startY = internalY - overlay.y;
+                        return;
+                    }
+                }
+
+                if (drawTool === 'text') {
+                    // addText...
+                } else {
+                    saveUndoState();
+                    isDrawing = true;
+                    startX = internalX;
+                    startY = internalY; // Correction: For drawing, startX is just the point
+                    snapshot = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+                }
+            };
+
+            drawCanvas.ontouchmove = e => {
+                if (!isDrawing && !overlay.isDragging) return;
+                e.preventDefault();
+                const r = drawCanvas.getBoundingClientRect();
+                const tx = e.touches[0].clientX - r.left;
+                const ty = e.touches[0].clientY - r.top;
+                const scaleX = drawCanvas.width / drawCanvas.clientWidth;
+                const scaleY = drawCanvas.height / drawCanvas.clientHeight;
+                const internalX = tx * scaleX;
+                const internalY = ty * scaleY;
+
+                if (overlay.active && overlay.isDragging) {
+                    overlay.x = internalX - startX;
+                    overlay.y = internalY - startY;
+                    renderEditor();
+                } else if (isDrawing) {
+                    drawCtx.putImageData(snapshot, 0, 0);
+                    drawShape(startX, startY, internalX, internalY);
+                }
+            };
+
+            drawCanvas.ontouchend = () => { isDrawing = false; overlay.isDragging = false; };
+
+            function clearDraw() {
+                drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                saveUndoState();
             }
-        };
+            async function savePhoto() {
+                if (!photoCanvas.width) return;
 
-        photoCanvas.ontouchend = () => {
-            isDrawing = false;
-            overlay.isDragging = false;
-        };
+                let dataUrl;
 
-        function clearDraw() { imgObj.src = imgObj.src; setTimeout(renderEditor, 50); } // Reset to last saved state
-        async function savePhoto() {
-            if (!photoCanvas.width) return;
-
-            let dataUrl;
-
-            // Si hay un plano superpuesto activo, capturamos todo el contenedor (WYSIWYG)
-            if (overlay.active && overlay.img) {
-                const element = document.getElementById('canvas-container');
-                try {
-                    // Usamos html2canvas para capturar la composición
-                    const canvas = await html2canvas(element, {
-                        scale: 2,
-                        useCORS: true,
-                        backgroundColor: null,
-                        logging: false
-                    });
-                    dataUrl = canvas.toDataURL('image/jpeg', 0.8); // Mejor calidad para el guardado final
-                } catch (err) {
-                    console.error("Error al capturar superposición:", err);
-                    alert("Hubo un error al procesar la superposición. Se guardará la imagen base.");
+                // Si hay un plano superpuesto activo, capturamos todo el contenedor (WYSIWYG)
+                if (overlay.active && overlay.img) {
+                    const element = document.getElementById('canvas-container');
+                    try {
+                        // Usamos html2canvas para capturar la composición
+                        const canvas = await html2canvas(element, {
+                            scale: 2,
+                            useCORS: true,
+                            backgroundColor: null,
+                            logging: false
+                        });
+                        dataUrl = canvas.toDataURL('image/jpeg', 0.8); // Mejor calidad para el guardado final
+                    } catch (err) {
+                        console.error("Error al capturar superposición:", err);
+                        alert("Hubo un error al procesar la superposición. Se guardará la imagen base.");
+                        dataUrl = photoCanvas.toDataURL('image/jpeg', 0.6);
+                    }
+                } else {
+                    // Si no hay overlay, guardamos el canvas normal como siempre
                     dataUrl = photoCanvas.toDataURL('image/jpeg', 0.6);
                 }
-            } else {
-                // Si no hay overlay, guardamos el canvas normal como siempre
-                dataUrl = photoCanvas.toDataURL('image/jpeg', 0.6);
+
+                savedPhotos.push(dataUrl);
+                const i = document.createElement('img');
+                i.src = savedPhotos[savedPhotos.length - 1];
+                i.className = 'thumb';
+                document.getElementById('gallery-grid').appendChild(i);
+                document.getElementById('photo-count').innerText = savedPhotos.length;
             }
 
-            savedPhotos.push(dataUrl);
-            const i = document.createElement('img');
-            i.src = savedPhotos[savedPhotos.length - 1];
-            i.className = 'thumb';
-            document.getElementById('gallery-grid').appendChild(i);
-            document.getElementById('photo-count').innerText = savedPhotos.length;
-        }
+            // --- CALCULATE BARANDILLA BOM ---
+            function calculateBarandillaBOM() {
+                console.log("DEBUG: calculateBarandillaBOM called");
+                const bom = {};
+                const tramosElements = document.querySelectorAll('.b-tramo');
+                console.log("DEBUG: tramos found:", tramosElements.length);
 
-        // --- CALCULATE BARANDILLA BOM ---
-        function calculateBarandillaBOM() {
-            console.log("DEBUG: calculateBarandillaBOM called");
-            const bom = {};
-            const tramosElements = document.querySelectorAll('.b-tramo');
-            console.log("DEBUG: tramos found:", tramosElements.length);
+                // Validación defensiva
+                if (!tramosElements || tramosElements.length === 0) {
+                    console.warn('No se encontraron elementos .b-tramo');
+                    return bom;
+                }
 
-            // Validación defensiva
-            if (!tramosElements || tramosElements.length === 0) {
-                console.warn('No se encontraron elementos .b-tramo');
+                const lengths = [];
+                const toeBoards = [];
+                let totalLength = 0;
+
+                tramosElements.forEach(el => {
+                    const len = parseFloat(el.querySelector('.b-len').value) || 0;
+                    const rodapie = el.querySelector('.b-rodapie').checked;
+                    lengths.push(len);
+                    toeBoards.push(rodapie);
+                    totalLength += len;
+                });
+
+                const startType = document.getElementById('b-start-conf').value;
+                const endType = document.getElementById('b-end-conf').value;
+                const fixType = document.getElementById('b-fix-type').value;
+
+                // Get posts
+                const tramosData = lengths.map(l => ({ len: l }));
+                const sol = solveBarandillaPosts(tramosData, startType, endType);
+                const totalPosts = sol.count;
+
+                // 1. Posts (BA S50)
+                bom['BA S50'] = totalPosts;
+
+                // 2. Bars (BA R11) - Calculated for 2 parallel bars
+                // Algorithm from Python script: Bin packing 3m bars
+                // We need 2 * totalLength of bars.
+                // Simplified: how many 3m bars cover 2 * totalLength?
+                // "comp['R11'] = bars_used" in Python uses a more complex bin packing per piece.
+                // Since we use continuous bars with unions R21, we can simplify:
+                // For each rail (top and mid), we calculate how many 3m bars are needed.
+                let barsNeeded = 0;
+                lengths.forEach(L => {
+                    // Top rail
+                    barsNeeded += Math.ceil(L / 3);
+                    // Mid rail
+                    barsNeeded += Math.ceil(L / 3);
+                });
+                bom['BA R11'] = barsNeeded;
+
+                // 3. Linear Junctions (BA R21)
+                let junctionsR21 = 0;
+                lengths.forEach(L => {
+                    const numBars = Math.ceil(L / 3);
+                    if (numBars > 1) {
+                        junctionsR21 += (numBars - 1) * 2; // 2 parallel bars
+                    }
+                });
+                bom['BA R21'] = junctionsR21;
+
+                // 4. Angular Junctions (BA R31)
+                // 2 per corner (top and mid)
+                bom['BA R31'] = (lengths.length - 1) * 2;
+
+                // 5. Terminations
+                if (startType === 'R91') bom['BA R91'] = (bom['BA R91'] || 0) + 1;
+                if (startType === 'R41') bom['BA R41'] = (bom['BA R41'] || 0) + 2;
+                if (startType === 'R51') bom['BA R51'] = (bom['BA R51'] || 0) + 1;
+
+                if (endType === 'R91') bom['BA R91'] = (bom['BA R91'] || 0) + 1;
+                if (endType === 'R41') bom['BA R41'] = (bom['BA R41'] || 0) + 2;
+                if (endType === 'R51') bom['BA R51'] = (bom['BA R51'] || 0) + 1;
+
+                // 6. Counterweights (BA V20) & Pads (BA Z35) & Safety (BA Z34)
+                if (fixType === 'contrapeso' && sol.posts && Array.isArray(sol.posts)) {
+                    // Determine V20 per post
+                    // Ends (not R41) get 4, Intermediates get 2.
+                    let v20Count = 0;
+                    sol.posts.forEach((segPosts, idx) => {
+                        segPosts.forEach((sPos, pIdx) => {
+                            let isExtremity = false;
+                            if (idx === 0 && pIdx === 0 && startType !== 'R41') isExtremity = true;
+                            if (idx === sol.posts.length - 1 && pIdx === segPosts.length - 1 && endType !== 'R41') isExtremity = true;
+
+                            v20Count += isExtremity ? 4 : 2;
+                        });
+                    });
+                    bom['BA V20'] = v20Count;
+                    bom['BA Z35'] = Math.floor(v20Count / 2);
+                }
+
+                // 7. Cartel & Safety
+                bom['BA Z12'] = 1; // Cartel
+                bom['BA Z34'] = totalPosts; // Z34 per post
+
+                // 8. Screws (BBF)
+                bom['BBF-05.5-096-DS-A2'] = totalPosts + 1;
+                bom['BBF-05.5-025-JF3-2-A2'] = totalPosts + 1;
+
+                // 9. Rodapié (F20, F23, F50, F26)
+                let countF20 = 0;
+                let countF23 = 0;
+                let countF50 = 0;
+                let countF26 = 0;
+
+                lengths.forEach((L, i) => {
+                    if (toeBoards[i]) {
+                        const numPieces = Math.ceil(L / 3);
+                        countF20 += numPieces;
+                        countF23 += Math.max(0, numPieces - 1);
+                        if (sol.posts && sol.posts[i]) {
+                            countF50 += sol.posts[i].length;
+                        }
+
+                        if (i < lengths.length - 1 && toeBoards[i + 1]) {
+                            countF26 += 1; // Corner union
+                        }
+                    }
+                });
+
+                if (countF20 > 0) {
+                    bom['BA F20'] = countF20;
+                    bom['BA F23'] = countF23;
+                    bom['BA F50'] = countF50;
+                    if (countF26 > 0) bom['BA F26'] = countF26;
+                }
+
                 return bom;
             }
 
-            const lengths = [];
-            const toeBoards = [];
-            let totalLength = 0;
+            // --- CALCULATE BOM FOR EXCEL EXPORT ---
+            // --- CALCULATE BOM FOR EXCEL EXPORT ---
+            function calculateLineBOM() {
+                const bom = {};
 
-            tramosElements.forEach(el => {
-                const len = parseFloat(el.querySelector('.b-len').value) || 0;
-                const rodapie = el.querySelector('.b-rodapie').checked;
-                lengths.push(len);
-                toeBoards.push(rodapie);
-                totalLength += len;
-            });
+                if (currentSystem === 'sand01' || currentSystem === 'sand02' || currentSystem === 'poste') {
+                    const variant = document.getElementById('lv-variant').value;
+                    const supportType = document.getElementById('lv-support-type').value;
 
-            const startType = document.getElementById('b-start-conf').value;
-            const endType = document.getElementById('b-end-conf').value;
-            const fixType = document.getElementById('b-fix-type').value;
+                    // Recoger datos de geometría
+                    let tramosData = [];
+                    let totalLength = 0;
+                    let countCurves = 0;
+                    const curveModels = {};
 
-            // Get posts
-            const tramosData = lengths.map(l => ({ len: l }));
-            const sol = solveBarandillaPosts(tramosData, startType, endType);
-            const totalPosts = sol.count;
+                    document.querySelectorAll('.lv-tramo').forEach((el, i) => {
+                        const len = parseFloat(el.querySelector('.lv-len').value) || 0;
+                        totalLength += len;
 
-            // 1. Posts (BA S50)
-            bom['BA S50'] = totalPosts;
-
-            // 2. Bars (BA R11) - Calculated for 2 parallel bars
-            // Algorithm from Python script: Bin packing 3m bars
-            // We need 2 * totalLength of bars.
-            // Simplified: how many 3m bars cover 2 * totalLength?
-            // "comp['R11'] = bars_used" in Python uses a more complex bin packing per piece.
-            // Since we use continuous bars with unions R21, we can simplify:
-            // For each rail (top and mid), we calculate how many 3m bars are needed.
-            let barsNeeded = 0;
-            lengths.forEach(L => {
-                // Top rail
-                barsNeeded += Math.ceil(L / 3);
-                // Mid rail
-                barsNeeded += Math.ceil(L / 3);
-            });
-            bom['BA R11'] = barsNeeded;
-
-            // 3. Linear Junctions (BA R21)
-            let junctionsR21 = 0;
-            lengths.forEach(L => {
-                const numBars = Math.ceil(L / 3);
-                if (numBars > 1) {
-                    junctionsR21 += (numBars - 1) * 2; // 2 parallel bars
-                }
-            });
-            bom['BA R21'] = junctionsR21;
-
-            // 4. Angular Junctions (BA R31)
-            // 2 per corner (top and mid)
-            bom['BA R31'] = (lengths.length - 1) * 2;
-
-            // 5. Terminations
-            if (startType === 'R91') bom['BA R91'] = (bom['BA R91'] || 0) + 1;
-            if (startType === 'R41') bom['BA R41'] = (bom['BA R41'] || 0) + 2;
-            if (startType === 'R51') bom['BA R51'] = (bom['BA R51'] || 0) + 1;
-
-            if (endType === 'R91') bom['BA R91'] = (bom['BA R91'] || 0) + 1;
-            if (endType === 'R41') bom['BA R41'] = (bom['BA R41'] || 0) + 2;
-            if (endType === 'R51') bom['BA R51'] = (bom['BA R51'] || 0) + 1;
-
-            // 6. Counterweights (BA V20) & Pads (BA Z35) & Safety (BA Z34)
-            if (fixType === 'contrapeso' && sol.posts && Array.isArray(sol.posts)) {
-                // Determine V20 per post
-                // Ends (not R41) get 4, Intermediates get 2.
-                let v20Count = 0;
-                sol.posts.forEach((segPosts, idx) => {
-                    segPosts.forEach((sPos, pIdx) => {
-                        let isExtremity = false;
-                        if (idx === 0 && pIdx === 0 && startType !== 'R41') isExtremity = true;
-                        if (idx === sol.posts.length - 1 && pIdx === segPosts.length - 1 && endType !== 'R41') isExtremity = true;
-
-                        v20Count += isExtremity ? 4 : 2;
-                    });
-                });
-                bom['BA V20'] = v20Count;
-                bom['BA Z35'] = Math.floor(v20Count / 2);
-            }
-
-            // 7. Cartel & Safety
-            bom['BA Z12'] = 1; // Cartel
-            bom['BA Z34'] = totalPosts; // Z34 per post
-
-            // 8. Screws (BBF)
-            bom['BBF-05.5-096-DS-A2'] = totalPosts + 1;
-            bom['BBF-05.5-025-JF3-2-A2'] = totalPosts + 1;
-
-            // 9. Rodapié (F20, F23, F50, F26)
-            let countF20 = 0;
-            let countF23 = 0;
-            let countF50 = 0;
-            let countF26 = 0;
-
-            lengths.forEach((L, i) => {
-                if (toeBoards[i]) {
-                    const numPieces = Math.ceil(L / 3);
-                    countF20 += numPieces;
-                    countF23 += Math.max(0, numPieces - 1);
-                    if (sol.posts && sol.posts[i]) {
-                        countF50 += sol.posts[i].length;
-                    }
-
-                    if (i < lengths.length - 1 && toeBoards[i + 1]) {
-                        countF26 += 1; // Corner union
-                    }
-                }
-            });
-
-            if (countF20 > 0) {
-                bom['BA F20'] = countF20;
-                bom['BA F23'] = countF23;
-                bom['BA F50'] = countF50;
-                if (countF26 > 0) bom['BA F26'] = countF26;
-            }
-
-            return bom;
-        }
-
-        // --- CALCULATE BOM FOR EXCEL EXPORT ---
-        // --- CALCULATE BOM FOR EXCEL EXPORT ---
-        function calculateLineBOM() {
-            const bom = {};
-
-            if (currentSystem === 'sand01' || currentSystem === 'sand02' || currentSystem === 'poste') {
-                const variant = document.getElementById('lv-variant').value;
-                const supportType = document.getElementById('lv-support-type').value;
-
-                // Recoger datos de geometría
-                let tramosData = [];
-                let totalLength = 0;
-                let countCurves = 0;
-                const curveModels = {};
-
-                document.querySelectorAll('.lv-tramo').forEach((el, i) => {
-                    const len = parseFloat(el.querySelector('.lv-len').value) || 0;
-                    totalLength += len;
-
-                    const manuals = [];
-                    el.querySelectorAll('.manual-point-row').forEach(row => {
-                        manuals.push({
-                            dist: row.querySelector('.mp-dist').value,
-                            type: row.querySelector('.mp-type').value
+                        const manuals = [];
+                        el.querySelectorAll('.manual-point-row').forEach(row => {
+                            manuals.push({
+                                dist: row.querySelector('.mp-dist').value,
+                                type: row.querySelector('.mp-type').value
+                            });
                         });
+
+                        const hasCurve = el.querySelector('.lv-end').value === 'curva';
+                        const curveModel = hasCurve ? el.querySelector('.lv-curve-type').value : null;
+
+                        if (hasCurve) {
+                            countCurves++;
+                            curveModels[curveModel] = (curveModels[curveModel] || 0) + 1;
+                        }
+
+                        tramosData.push({ len, manual: manuals, hasCurve, curveModel });
                     });
 
-                    const hasCurve = el.querySelector('.lv-end').value === 'curva';
-                    const curveModel = hasCurve ? el.querySelector('.lv-curve-type').value : null;
+                    // Calcular posts automáticos
+                    const sol = solveLvPosts(tramosData);
+                    const countSZH = sol.countSZH;
+                    const countExtras = sol.countExtras;
 
-                    if (hasCurve) {
-                        countCurves++;
-                        curveModels[curveModel] = (curveModels[curveModel] || 0) + 1;
-                    }
+                    if (currentSystem === 'sand01' || supportType === 'sand02') {
+                        // SAND bases (2 extremos + intermedios + curvas + MANUALES)
+                        // Note: solveLvPosts includes manual points in 'countExtras'
+                        let totalBases = 2 + countSZH + countCurves + countExtras;
 
-                    tramosData.push({ len, manual: manuals, hasCurve, curveModel });
-                });
+                        // Shared Support Check
+                        if (document.getElementById('chk-shared-support')?.checked) {
+                            totalBases -= 1;
+                        }
 
-                // Calcular posts automáticos
-                const sol = solveLvPosts(tramosData);
-                const countSZH = sol.countSZH;
-                const countExtras = sol.countExtras;
+                        const baseCode = currentSystem === 'sand01' ? 'SAND-01' : 'SAND-02';
+                        bom[baseCode] = totalBases;
 
-                if (currentSystem === 'sand01' || supportType === 'sand02') {
-                    // SAND bases (2 extremos + intermedios + curvas + MANUALES)
-                    // Note: solveLvPosts includes manual points in 'countExtras'
-                    let totalBases = 2 + countSZH + countCurves + countExtras;
+                        // Fijación
+                        if (currentSystem === 'sand01') {
+                            const fixCode = document.getElementById('sand01-fix-type').value;
+                            bom[fixCode] = totalBases * 20;
+                        } else {
+                            // SAND-02 default rivets
+                            bom['BEF 306-VE250'] = totalBases * 20;
+                        }
 
-                    // Shared Support Check
-                    if (document.getElementById('chk-shared-support')?.checked) {
-                        totalBases -= 1;
-                    }
+                        // Elementos según variante
+                        if (variant === 'ends10') {
+                            const ebModel = document.getElementById('lv-eb-model').value;
+                            const szhModel = document.getElementById('lv-szh-model').value;
 
-                    const baseCode = currentSystem === 'sand01' ? 'SAND-01' : 'SAND-02';
-                    bom[baseCode] = totalBases;
+                            bom[ebModel] = 2; // Extremos
+                            if (countSZH > 0) bom[szhModel] = countSZH; // Intermedios Auto
 
-                    // Fijación
-                    if (currentSystem === 'sand01') {
-                        const fixCode = document.getElementById('sand01-fix-type').value;
-                        bom[fixCode] = totalBases * 20;
-                    } else {
-                        // SAND-02 default rivets
-                        bom['BEF 306-VE250'] = totalBases * 20;
-                    }
+                            // Add Manual Points Components
+                            if (sol.segments) {
+                                sol.segments.forEach(seg => {
+                                    seg.forEach(post => {
+                                        if (post.type === 'manual') {
+                                            const mType = post.ref;
+                                            bom[mType] = (bom[mType] || 0) + 1;
+                                        }
+                                    });
+                                });
+                            }
 
-                    // Elementos según variante
-                    if (variant === 'ends10') {
-                        const ebModel = document.getElementById('lv-eb-model').value;
-                        const szhModel = document.getElementById('lv-szh-model').value;
+                            // Cable SEIL-30
+                            bom['SEIL-30'] = Math.ceil(totalLength + 2);
 
-                        bom[ebModel] = 2; // Extremos
-                        if (countSZH > 0) bom[szhModel] = countSZH; // Intermedios Auto
+                            // ENDS-10
+                            if (currentSystem === 'sand01') {
+                                bom['EB-10'] = 2;
+                                bom['ENDS-10'] = 1; // Pack 2
+                                bom['ENDS SAFETY TUBE'] = 2;
+                            } else {
+                                bom['ENDS-10'] = 1;
+                            }
 
-                        // Add Manual Points Components
+                            // Absorbedores (si checkbox activado)
+                            if (document.getElementById('chk-shock').checked) {
+                                const shockQty = parseInt(document.getElementById('lv-shock-qty').value) || 0;
+                                const shockType = document.getElementById('lv-shock-type').value;
+                                if (shockQty > 0) bom[shockType] = shockQty;
+                            }
+
+                            // Curvas
+                            for (const [model, qty] of Object.entries(curveModels)) {
+                                bom[model] = qty;
+                            }
+
+                            // Cartel de instalación
+                            if (currentSystem === 'sand01') {
+                                bom['TYP-20-ES'] = 1;
+                            } else {
+                                bom['TYP-20-ES'] = 1; // Error in original code? It had AIO-TYP-20-ES for both ends10
+                            }
+
+                            // Alzas (si checkbox activado)
+                            if (document.getElementById('chk-alzas').checked) {
+                                const totalAlzas = countSZH + countCurves;
+                                const alzaCode = currentSystem === 'sand01' ? 'VL-20-50' : 'VL-SAND-SET-10';
+                                if (totalAlzas > 0) bom[alzaCode] = totalAlzas;
+                            }
+
+                        } else { // ends50
+                            const szhModel = document.getElementById('lv-szh-model').value;
+
+                            // Configuración de extremos Ends50
+                            const ends50Config = document.getElementById('lv-ends50-config').value;
+                            if (ends50Config === '50-51') {
+                                bom['ENDS-50'] = 1;
+                                bom['ENDS-51'] = 1;
+                            } else {
+                                bom['ENDS-50'] = 2;
+                            }
+
+                            if (countSZH > 0) bom[szhModel] = countSZH; // Intermedios Auto
+
+                            // Add Manual Points Components
+                            if (sol.segments) {
+                                sol.segments.forEach(seg => {
+                                    seg.forEach(post => {
+                                        if (post.type === 'manual') {
+                                            const mType = post.ref;
+                                            bom[mType] = (bom[mType] || 0) + 1;
+                                        }
+                                    });
+                                });
+                            }
+
+                            // Cable SEIL-30
+                            bom['SEIL-30'] = Math.ceil(totalLength + 2);
+
+                            // Curvas
+                            for (const [model, qty] of Object.entries(curveModels)) {
+                                bom[model] = qty;
+                            }
+
+                            // Cartel de instalación
+                            bom['TYP-50'] = 1;
+                            if (currentSystem === 'sand01') bom['ENDS SAFETY TUBE'] = 2;
+
+                            // Alzas (si checkbox activado)
+                            if (document.getElementById('chk-alzas').checked) {
+                                const totalAlzas = countSZH + countCurves + countExtras; // Include manuals!
+                                const alzaCode = currentSystem === 'sand01' ? 'VL-20-50' : 'VL-SAND-SET-10';
+                                if (totalAlzas > 0) bom[alzaCode] = totalAlzas;
+                            }
+                        }
+
+                        // Cartel ADEKUA (siempre)
+                        bom['CARTEL ADEKUA'] = 1;
+                    } else if (supportType === 'poste') {
+                        // Logic with POSTS (Default or Custom)
+                        // We need to count by model
+                        const defaultModel = document.getElementById('lv-post-model').value;
+                        const isShared = document.getElementById('chk-shared-support')?.checked;
+
+                        // 1. Structural Nodes (Start, Corners, End)
+                        // Total nodes = tramosData.length + 1
+                        const numNodes = tramosData.length + 1;
+                        for (let i = 0; i < numNodes; i++) {
+                            // If shared support is active, skip the last node (Poste Final) 
+                            // because it shares the post with Node 0 (Poste Inicial)
+                            if (isShared && i === numNodes - 1) continue;
+
+                            const nodeKey = `node_${i}`;
+                            const model = customPostSelections[nodeKey] || defaultModel;
+                            bom[model] = (bom[model] || 0) + 1;
+                        }
+
+                        // 2. Intermediate Posts
                         if (sol.segments) {
-                            sol.segments.forEach(seg => {
-                                seg.forEach(post => {
-                                    if (post.type === 'manual') {
-                                        const mType = post.ref;
-                                        bom[mType] = (bom[mType] || 0) + 1;
-                                    }
+                            sol.segments.forEach((segment, segIdx) => {
+                                segment.forEach((post, postIdx) => {
+                                    const key = `${segIdx}_${postIdx}`;
+                                    const model = customPostSelections[key] || defaultModel;
+                                    bom[model] = (bom[model] || 0) + 1;
                                 });
                             });
                         }
 
-                        // Cable SEIL-30
-                        bom['SEIL-30'] = Math.ceil(totalLength + 2);
+                        // 3. Componentes según variante (Ends, SZH, etc)
+                        if (variant === 'ends10') {
+                            const ebModel = document.getElementById('lv-eb-model').value;
+                            const szhModel = document.getElementById('lv-szh-model').value;
 
-                        // ENDS-10
-                        if (currentSystem === 'sand01') {
-                            bom['EB-10'] = 2;
-                            bom['ENDS-10'] = 1; // Pack 2
-                            bom['ENDS SAFETY TUBE'] = 2;
-                        } else {
+                            // Extremos EB (Soportes extremos)
+                            bom[ebModel] = 2;
+
+                            // Intermedios (SZH - Guías de cable, no postes estructurales)
+                            if (countSZH > 0) bom[szhModel] = countSZH;
+
                             bom['ENDS-10'] = 1;
+                            bom['SEIL-30'] = Math.ceil(totalLength + 2);
+
+                            // Curvas
+                            for (const [model, qty] of Object.entries(curveModels)) {
+                                bom[model] = qty;
+                            }
+
+                            // Absorbedores
+                            if (document.getElementById('chk-shock').checked) {
+                                const shockQty = parseInt(document.getElementById('lv-shock-qty').value) || 0;
+                                const shockType = document.getElementById('lv-shock-type').value;
+                                if (shockQty > 0) bom[shockType] = shockQty;
+                            }
+
+                            // Cartel de instalación
+                            bom['TYP-10'] = 1;
+
+                            // Alzas de nivelación
+                            if (document.getElementById('chk-alzas-posts') && document.getElementById('chk-alzas-posts').checked) {
+                                const totalAlzas = countSZH + countCurves;
+                                if (totalAlzas > 0) bom['VL-20-50'] = totalAlzas;
+                            }
+                        } else { // ends50
+                            const szhModel = document.getElementById('lv-szh-model').value;
+
+                            // Configuración de extremos Ends50
+                            const ends50Config = document.getElementById('lv-ends50-config').value;
+                            if (ends50Config === '50-51') {
+                                bom['ENDS-50'] = 1;
+                                bom['ENDS-51'] = 1;
+                            } else {
+                                bom['ENDS-50'] = 2;
+                            }
+
+                            // Intermedios
+                            if (countSZH > 0) bom[szhModel] = countSZH;
+
+                            // Cable SEIL-30
+                            bom['SEIL-30'] = Math.ceil(totalLength + 2);
+
+                            // Curvas EDLE
+                            for (const [model, qty] of Object.entries(curveModels)) {
+                                bom[model] = qty;
+                            }
+
+                            // Cartel de instalación
+                            bom['TYP-50'] = 1;
+
+                            // Alzas de nivelación (si checkbox activado) - SIEMPRE VL-20-50
+                            if (document.getElementById('chk-alzas-posts') && document.getElementById('chk-alzas-posts').checked) {
+                                const totalAlzas = countSZH + countCurves;
+                                if (totalAlzas > 0) bom['VL-20-50'] = totalAlzas;
+                            }
                         }
+                    } else {
+                        // WITHOUT POSTS - Solo extremos
+                        if (variant === 'ends10') {
+                            const ebModel = document.getElementById('lv-eb-model').value;
+                            const szhModel = document.getElementById('lv-szh-model').value;
 
-                        // Absorbedores (si checkbox activado)
-                        if (document.getElementById('chk-shock').checked) {
-                            const shockQty = parseInt(document.getElementById('lv-shock-qty').value) || 0;
-                            const shockType = document.getElementById('lv-shock-type').value;
-                            if (shockQty > 0) bom[shockType] = shockQty;
-                        }
+                            // Solo extremos, sin postes
+                            bom[ebModel] = 2;
 
-                        // Curvas
-                        for (const [model, qty] of Object.entries(curveModels)) {
-                            bom[model] = qty;
-                        }
+                            // Intermedios
+                            if (countSZH > 0) bom[szhModel] = countSZH;
 
-                        // Cartel de instalación
-                        if (currentSystem === 'sand01') {
-                            bom['TYP-20-ES'] = 1;
-                        } else {
-                            bom['TYP-20-ES'] = 1; // Error in original code? It had AIO-TYP-20-ES for both ends10
-                        }
+                            // ENDS-10
+                            bom['ENDS-10'] = 1;
 
-                        // Alzas (si checkbox activado)
-                        if (document.getElementById('chk-alzas').checked) {
-                            const totalAlzas = countSZH + countCurves;
-                            const alzaCode = currentSystem === 'sand01' ? 'VL-20-50' : 'VL-SAND-SET-10';
-                            if (totalAlzas > 0) bom[alzaCode] = totalAlzas;
-                        }
+                            // Cable SEIL-30
+                            bom['SEIL-30'] = Math.ceil(totalLength + 2);
 
-                    } else { // ends50
-                        const szhModel = document.getElementById('lv-szh-model').value;
+                            // Curvas EDLE
+                            for (const [model, qty] of Object.entries(curveModels)) {
+                                bom[model] = qty;
+                            }
 
-                        // Configuración de extremos Ends50
-                        const ends50Config = document.getElementById('lv-ends50-config').value;
-                        if (ends50Config === '50-51') {
-                            bom['ENDS-50'] = 1;
-                            bom['ENDS-51'] = 1;
-                        } else {
-                            bom['ENDS-50'] = 2;
-                        }
+                            // Absorbedores (si checkbox activado)
+                            if (document.getElementById('chk-shock').checked) {
+                                const shockQty = parseInt(document.getElementById('lv-shock-qty').value) || 0;
+                                const shockType = document.getElementById('lv-shock-type').value;
+                                if (shockQty > 0) bom[shockType] = shockQty;
+                            }
 
-                        if (countSZH > 0) bom[szhModel] = countSZH; // Intermedios Auto
+                            // Cartel de instalación
+                            bom['TYP-10'] = 1;
 
-                        // Add Manual Points Components
-                        if (sol.segments) {
-                            sol.segments.forEach(seg => {
-                                seg.forEach(post => {
-                                    if (post.type === 'manual') {
-                                        const mType = post.ref;
-                                        bom[mType] = (bom[mType] || 0) + 1;
-                                    }
-                                });
-                            });
-                        }
+                        } else { // ends50
+                            const szhModel = document.getElementById('lv-szh-model').value;
 
-                        // Cable SEIL-30
-                        bom['SEIL-30'] = Math.ceil(totalLength + 2);
+                            // Configuración de extremos Ends50 - sin postes
+                            const ends50Config = document.getElementById('lv-ends50-config').value;
+                            if (ends50Config === '50-51') {
+                                bom['ENDS-50'] = 1;
+                                bom['ENDS-51'] = 1;
+                            } else {
+                                bom['ENDS-50'] = 2;
+                            }
 
-                        // Curvas
-                        for (const [model, qty] of Object.entries(curveModels)) {
-                            bom[model] = qty;
-                        }
+                            // Intermedios
+                            if (countSZH > 0) bom[szhModel] = countSZH;
 
-                        // Cartel de instalación
-                        bom['TYP-50'] = 1;
-                        if (currentSystem === 'sand01') bom['ENDS SAFETY TUBE'] = 2;
+                            // Cable SEIL-30
+                            bom['SEIL-30'] = Math.ceil(totalLength + 2);
 
-                        // Alzas (si checkbox activado)
-                        if (document.getElementById('chk-alzas').checked) {
-                            const totalAlzas = countSZH + countCurves + countExtras; // Include manuals!
-                            const alzaCode = currentSystem === 'sand01' ? 'VL-20-50' : 'VL-SAND-SET-10';
-                            if (totalAlzas > 0) bom[alzaCode] = totalAlzas;
+                            // Curvas EDLE
+                            for (const [model, qty] of Object.entries(curveModels)) {
+                                bom[model] = qty;
+                            }
+
+                            // Cartel de instalación
+                            bom['TYP-50'] = 1;
                         }
                     }
 
                     // Cartel ADEKUA (siempre)
                     bom['CARTEL ADEKUA'] = 1;
-                } else if (supportType === 'poste') {
-                    // Logic with POSTS (Default or Custom)
-                    // We need to count by model
-                    const defaultModel = document.getElementById('lv-post-model').value;
-                    const isShared = document.getElementById('chk-shared-support')?.checked;
+                }
 
-                    // 1. Structural Nodes (Start, Corners, End)
-                    // Total nodes = tramosData.length + 1
-                    const numNodes = tramosData.length + 1;
-                    for (let i = 0; i < numNodes; i++) {
-                        // If shared support is active, skip the last node (Poste Final) 
-                        // because it shares the post with Node 0 (Poste Inicial)
-                        if (isShared && i === numNodes - 1) continue;
+                return bom;
+            }
 
-                        const nodeKey = `node_${i}`;
-                        const model = customPostSelections[nodeKey] || defaultModel;
-                        bom[model] = (bom[model] || 0) + 1;
-                    }
+            // --- CALCULATE RAIL BOM ---
+            function calculateRailBOM() {
+                const bom = {};
 
-                    // 2. Intermediate Posts
-                    if (sol.segments) {
-                        sol.segments.forEach((segment, segIdx) => {
-                            segment.forEach((post, postIdx) => {
-                                const key = `${segIdx}_${postIdx}`;
-                                const model = customPostSelections[key] || defaultModel;
-                                bom[model] = (bom[model] || 0) + 1;
+                // Get configuration
+                const longitud = parseFloat(document.getElementById('rail-longitud').value) || 0;
+                const isClosed = document.getElementById('rail-cerrada').checked;
+                const tipoSoporte = document.getElementById('rail-soporte-tipo').value;
+                const distMax = parseFloat(document.getElementById('rail-dist-max').value) || 3;
+                const usar6m = document.getElementById('rail-usar-6m').checked;
+                const carroTipo = document.getElementById('rail-carro-tipo').value;
+                const unionTipo = document.getElementById('rail-union-tipo').value;
+                const optimizarVE5 = document.getElementById('rail-optimizar-ve5').checked;
+
+                // Recoger datos de geometría si existen, si no usar longitud simple
+                let tramosData = [];
+                let totalLength = 0;
+                let countCurves = 0;
+                const curveModels = {};
+                const tramoEls = document.querySelectorAll('.lv-tramo');
+
+                if (tramoEls.length > 0) {
+                    tramoEls.forEach(el => {
+                        const len = parseFloat(el.querySelector('.lv-len').value) || 0;
+                        totalLength += len;
+                        const manuals = [];
+                        el.querySelectorAll('.manual-point-row').forEach(row => {
+                            manuals.push({
+                                dist: row.querySelector('.mp-dist').value,
+                                type: row.querySelector('.mp-type').value
                             });
                         });
-                    }
-
-                    // 3. Componentes según variante (Ends, SZH, etc)
-                    if (variant === 'ends10') {
-                        const ebModel = document.getElementById('lv-eb-model').value;
-                        const szhModel = document.getElementById('lv-szh-model').value;
-
-                        // Extremos EB (Soportes extremos)
-                        bom[ebModel] = 2;
-
-                        // Intermedios (SZH - Guías de cable, no postes estructurales)
-                        if (countSZH > 0) bom[szhModel] = countSZH;
-
-                        bom['ENDS-10'] = 1;
-                        bom['SEIL-30'] = Math.ceil(totalLength + 2);
-
-                        // Curvas
-                        for (const [model, qty] of Object.entries(curveModels)) {
-                            bom[model] = qty;
+                        const hasCurve = el.querySelector('.lv-end').value === 'curva';
+                        const curveModel = hasCurve ? el.querySelector('.lv-curve-type').value : null;
+                        if (hasCurve) {
+                            countCurves++;
+                            curveModels[curveModel] = (curveModels[curveModel] || 0) + 1;
                         }
-
-                        // Absorbedores
-                        if (document.getElementById('chk-shock').checked) {
-                            const shockQty = parseInt(document.getElementById('lv-shock-qty').value) || 0;
-                            const shockType = document.getElementById('lv-shock-type').value;
-                            if (shockQty > 0) bom[shockType] = shockQty;
-                        }
-
-                        // Cartel de instalación
-                        bom['TYP-10'] = 1;
-
-                        // Alzas de nivelación
-                        if (document.getElementById('chk-alzas-posts') && document.getElementById('chk-alzas-posts').checked) {
-                            const totalAlzas = countSZH + countCurves;
-                            if (totalAlzas > 0) bom['VL-20-50'] = totalAlzas;
-                        }
-                    } else { // ends50
-                        const szhModel = document.getElementById('lv-szh-model').value;
-
-                        // Configuración de extremos Ends50
-                        const ends50Config = document.getElementById('lv-ends50-config').value;
-                        if (ends50Config === '50-51') {
-                            bom['ENDS-50'] = 1;
-                            bom['ENDS-51'] = 1;
-                        } else {
-                            bom['ENDS-50'] = 2;
-                        }
-
-                        // Intermedios
-                        if (countSZH > 0) bom[szhModel] = countSZH;
-
-                        // Cable SEIL-30
-                        bom['SEIL-30'] = Math.ceil(totalLength + 2);
-
-                        // Curvas EDLE
-                        for (const [model, qty] of Object.entries(curveModels)) {
-                            bom[model] = qty;
-                        }
-
-                        // Cartel de instalación
-                        bom['TYP-50'] = 1;
-
-                        // Alzas de nivelación (si checkbox activado) - SIEMPRE VL-20-50
-                        if (document.getElementById('chk-alzas-posts') && document.getElementById('chk-alzas-posts').checked) {
-                            const totalAlzas = countSZH + countCurves;
-                            if (totalAlzas > 0) bom['VL-20-50'] = totalAlzas;
-                        }
-                    }
+                        tramosData.push({ len, manual: manuals, hasCurve, curveModel });
+                    });
                 } else {
-                    // WITHOUT POSTS - Solo extremos
-                    if (variant === 'ends10') {
-                        const ebModel = document.getElementById('lv-eb-model').value;
-                        const szhModel = document.getElementById('lv-szh-model').value;
+                    totalLength = longitud;
+                }
 
-                        // Solo extremos, sin postes
-                        bom[ebModel] = 2;
+                // Calcular soportes basados en longitud total
+                const sol = solveLvPosts(tramosData.length > 0 ? tramosData : [{ len: totalLength, manual: [], hasCurve: false }]);
+                const numIntermedios = sol.countSZH;
+                const numExtremosBase = isClosed ? 0 : 2;
+                const totalSoportes = numExtremosBase + numIntermedios + countCurves;
 
-                        // Intermedios
-                        if (countSZH > 0) bom[szhModel] = countSZH;
+                // Add supports based on type
+                if (tipoSoporte === 'bef') {
+                    const befModel = document.getElementById('rail-bef-model').value;
+                    if (befModel.includes('-VE5')) {
+                        const numPacks = Math.ceil(totalSoportes / 5);
+                        if (numPacks > 0) bom[befModel] = numPacks;
+                    } else {
+                        if (totalSoportes > 0) bom[befModel] = totalSoportes;
+                    }
+                } else if (tipoSoporte === 'sta') {
+                    const staModel = document.getElementById('rail-sta-model').value;
+                    if (totalSoportes > 0) {
+                        bom[staModel] = totalSoportes;
+                        bom['TAURUS-BEF-30'] = totalSoportes;
+                    }
+                } else { // bef-eb
+                    const ebModel = document.getElementById('rail-eb-model').value;
+                    const befAdicional = document.getElementById('rail-bef-adicional').value;
+                    const addVarilla = document.getElementById('rail-varilla-m16').checked;
 
-                        // ENDS-10
-                        bom['ENDS-10'] = 1;
+                    if (totalSoportes > 0) {
+                        bom['BEF-411'] = totalSoportes;
+                        bom[ebModel] = totalSoportes;
+                        bom[befAdicional] = totalSoportes;
 
-                        // Cable SEIL-30
-                        bom['SEIL-30'] = Math.ceil(totalLength + 2);
-
-                        // Curvas EDLE
-                        for (const [model, qty] of Object.entries(curveModels)) {
-                            bom[model] = qty;
+                        if (addVarilla) {
+                            const cantidadVarillas = totalSoportes * 0.5;
+                            bom['VAR-M16'] = cantidadVarillas;
                         }
-
-                        // Absorbedores (si checkbox activado)
-                        if (document.getElementById('chk-shock').checked) {
-                            const shockQty = parseInt(document.getElementById('lv-shock-qty').value) || 0;
-                            const shockType = document.getElementById('lv-shock-type').value;
-                            if (shockQty > 0) bom[shockType] = shockQty;
-                        }
-
-                        // Cartel de instalación
-                        bom['TYP-10'] = 1;
-
-                    } else { // ends50
-                        const szhModel = document.getElementById('lv-szh-model').value;
-
-                        // Configuración de extremos Ends50 - sin postes
-                        const ends50Config = document.getElementById('lv-ends50-config').value;
-                        if (ends50Config === '50-51') {
-                            bom['ENDS-50'] = 1;
-                            bom['ENDS-51'] = 1;
-                        } else {
-                            bom['ENDS-50'] = 2;
-                        }
-
-                        // Intermedios
-                        if (countSZH > 0) bom[szhModel] = countSZH;
-
-                        // Cable SEIL-30
-                        bom['SEIL-30'] = Math.ceil(totalLength + 2);
-
-                        // Curvas EDLE
-                        for (const [model, qty] of Object.entries(curveModels)) {
-                            bom[model] = qty;
-                        }
-
-                        // Cartel de instalación
-                        bom['TYP-50'] = 1;
                     }
                 }
 
-                // Cartel ADEKUA (siempre)
-                bom['CARTEL ADEKUA'] = 1;
+                // Calculate rails
+                let numRailes6m = 0;
+                let numRailes3m = 0;
+                let longitudRecta = totalLength; // For simple calculation
+
+                if (usar6m && totalLength >= 6) {
+                    numRailes6m = Math.floor(totalLength / 6);
+                    const resto = totalLength - (numRailes6m * 6);
+                    if (resto > 0) {
+                        numRailes3m = Math.ceil(resto / 3);
+                    }
+                } else {
+                    numRailes3m = Math.ceil(totalLength / 3);
+                }
+
+                if (numRailes6m > 0) {
+                    bom['TAURUS-RAIL-10-6000'] = numRailes6m;
+                }
+                if (numRailes3m > 0) {
+                    bom['TAURUS-RAIL-10-3000'] = numRailes3m;
+                }
+
+                // Calculate unions
+                const totalSegmentos = numRailes6m + numRailes3m;
+                let numUniones = 0;
+
+                if (isClosed) {
+                    numUniones = totalSegmentos; // Closed loop needs same number as segments
+                } else {
+                    numUniones = totalSegmentos > 0 ? totalSegmentos - 1 : 0; // Open line needs segments - 1
+                }
+
+                if (numUniones > 0) {
+                    const tienePackVE5 = (unionTipo === 'TAURUS-VB-10' || unionTipo === 'TAURUS-VB-12');
+
+                    if (tienePackVE5 && optimizarVE5) {
+                        const numPacks = Math.floor(numUniones / 5);
+                        const numSueltas = numUniones % 5;
+
+                        if (numPacks > 0) {
+                            bom[`${unionTipo}-VE5`] = numPacks;
+                        }
+                        if (numSueltas > 0) {
+                            bom[unionTipo] = numSueltas;
+                        }
+                    } else {
+                        bom[unionTipo] = numUniones;
+                    }
+                }
+
+                // Add curves
+                for (const [model, qty] of Object.entries(curveModels)) {
+                    if (qty > 0) bom[model] = (bom[model] || 0) + qty;
+                }
+
+                // Add terminations
+                if (isClosed) {
+                    bom['TAURUS-EA-11'] = 1; // Solo entrada/salida
+                } else {
+                    bom['TAURUS-EA-10'] = 1; // Final
+                    bom['TAURUS-EA-11'] = 1; // Entrada/salida
+                }
+
+                // Add cart
+                bom[carroTipo] = 1;
+
+                // Add signs
+                bom['TAURUS-TYP-10'] = 1;
+                if (totalSoportes > 0) {
+                    bom['CARTEL ADEKUA'] = 1;
+                }
+
+                return bom;
             }
 
-            return bom;
-        }
+            // --- EXPORT TO EXCEL ---
+            function exportToExcel() {
+                console.log("DEBUG: exportToExcel called");
+                console.log("DEBUG: currentSystem:", currentSystem);
+                if (typeof XLSX === 'undefined') {
+                    alert("Error: Biblioteca XLSX no cargada properly.");
+                    return;
+                }
+                let bom = {};
 
-        // --- CALCULATE RAIL BOM ---
-        function calculateRailBOM() {
-            const bom = {};
-
-            // Get configuration
-            const longitud = parseFloat(document.getElementById('rail-longitud').value) || 0;
-            const isClosed = document.getElementById('rail-cerrada').checked;
-            const tipoSoporte = document.getElementById('rail-soporte-tipo').value;
-            const distMax = parseFloat(document.getElementById('rail-dist-max').value) || 3;
-            const usar6m = document.getElementById('rail-usar-6m').checked;
-            const carroTipo = document.getElementById('rail-carro-tipo').value;
-            const unionTipo = document.getElementById('rail-union-tipo').value;
-            const optimizarVE5 = document.getElementById('rail-optimizar-ve5').checked;
-
-            // Recoger datos de geometría si existen, si no usar longitud simple
-            let tramosData = [];
-            let totalLength = 0;
-            let countCurves = 0;
-            const curveModels = {};
-            const tramoEls = document.querySelectorAll('.lv-tramo');
-
-            if (tramoEls.length > 0) {
-                tramoEls.forEach(el => {
-                    const len = parseFloat(el.querySelector('.lv-len').value) || 0;
-                    totalLength += len;
-                    const manuals = [];
-                    el.querySelectorAll('.manual-point-row').forEach(row => {
-                        manuals.push({
-                            dist: row.querySelector('.mp-dist').value,
-                            type: row.querySelector('.mp-type').value
+                if (currentSystem === 'rail') {
+                    // Rail system
+                    bom = calculateRailBOM();
+                } else if (currentSystem === 'barandilla') {
+                    bom = calculateBarandillaBOM();
+                } else if (currentSystem === 'attika') {
+                    const startConf = document.getElementById('b-start-conf').value;
+                    const endConf = document.getElementById('b-end-conf').value;
+                    let tramosData = [];
+                    document.querySelectorAll('.b-tramo').forEach(el => {
+                        tramosData.push({
+                            len: parseFloat(el.querySelector('.b-len').value) || 0,
+                            rodapie: el.querySelector('.b-rodapie').checked
                         });
                     });
-                    const hasCurve = el.querySelector('.lv-end').value === 'curva';
-                    const curveModel = hasCurve ? el.querySelector('.lv-curve-type').value : null;
-                    if (hasCurve) {
-                        countCurves++;
-                        curveModels[curveModel] = (curveModels[curveModel] || 0) + 1;
-                    }
-                    tramosData.push({ len, manual: manuals, hasCurve, curveModel });
-                });
-            } else {
-                totalLength = longitud;
-            }
-
-            // Calcular soportes basados en longitud total
-            const sol = solveLvPosts(tramosData.length > 0 ? tramosData : [{ len: totalLength, manual: [], hasCurve: false }]);
-            const numIntermedios = sol.countSZH;
-            const numExtremosBase = isClosed ? 0 : 2;
-            const totalSoportes = numExtremosBase + numIntermedios + countCurves;
-
-            // Add supports based on type
-            if (tipoSoporte === 'bef') {
-                const befModel = document.getElementById('rail-bef-model').value;
-                if (befModel.includes('-VE5')) {
-                    const numPacks = Math.ceil(totalSoportes / 5);
-                    if (numPacks > 0) bom[befModel] = numPacks;
+                    const sol = solveAttikaPosts(tramosData, startConf, endConf);
+                    bom = calculateAttikaBOM(tramosData, sol, startConf, endConf);
+                } else if (currentSystem === 'lightflex') {
+                    const len = parseFloat(document.getElementById('lf-len').value) || 0;
+                    const width = parseFloat(document.getElementById('lf-width').value) || 0;
+                    const qty = parseInt(document.getElementById('lf-qty').value) || 1;
+                    const bracketType = document.getElementById('lf-bracket-type').value;
+                    const rwaBars = {
+                        'LIGHT-FLEX-RWA-01-1165': parseInt(document.getElementById('lf-rwa-1165').value) || 0,
+                        'LIGHT-FLEX-RWA-01-1525': parseInt(document.getElementById('lf-rwa-1525').value) || 0,
+                        'LIGHT-FLEX-RWA-01-1900': parseInt(document.getElementById('lf-rwa-1900').value) || 0
+                    };
+                    const res = solveLightFlexComponents(len, width, bracketType, rwaBars, {
+                        mode: document.getElementById('lf-rwa-mode').value,
+                        gap_mm: parseFloat(document.getElementById('lf-rwa-gap').value) || 0,
+                        axis: document.getElementById('lf-rwa-axis').value,
+                        location: document.getElementById('lf-rwa-loc').value
+                    });
+                    const finalBom = {};
+                    Object.entries(res.comp).forEach(([k, v]) => { finalBom[k] = v * qty; });
+                    bom = finalBom;
+                } else if (currentSystem === 'sand01' || currentSystem === 'sand02' || currentSystem === 'poste') {
+                    bom = calculateLineBOM();
                 } else {
-                    if (totalSoportes > 0) bom[befModel] = totalSoportes;
+                    alert('La exportación a Excel solo está disponible para Sand02, Postes, Rail, Barandilla, Attika y Light Flex actualmente.');
+                    return;
                 }
-            } else if (tipoSoporte === 'sta') {
-                const staModel = document.getElementById('rail-sta-model').value;
-                if (totalSoportes > 0) {
-                    bom[staModel] = totalSoportes;
-                    bom['TAURUS-BEF-30'] = totalSoportes;
+
+                if (Object.keys(bom).length === 0) {
+                    alert('No hay datos para exportar. Por favor, completa la geometría primero.');
+                    return;
                 }
-            } else { // bef-eb
-                const ebModel = document.getElementById('rail-eb-model').value;
-                const befAdicional = document.getElementById('rail-bef-adicional').value;
-                const addVarilla = document.getElementById('rail-varilla-m16').checked;
 
-                if (totalSoportes > 0) {
-                    bom['BEF-411'] = totalSoportes;
-                    bom[ebModel] = totalSoportes;
-                    bom[befAdicional] = totalSoportes;
+                // Crear array de datos para Excel
+                const data = [['Código', 'Cantidad']];
 
-                    if (addVarilla) {
-                        const cantidadVarillas = totalSoportes * 0.5;
-                        bom['VAR-M16'] = cantidadVarillas;
+                // Mantener el orden como en las imágenes del usuario
+                // El orden está determinado por el orden de inserción en el objeto bom
+                for (const [codigo, cantidad] of Object.entries(bom)) {
+                    data.push([codigo, cantidad]);
+                }
+
+                // Añadir campos de la sección Accesos, Seguridad, Varios
+                const variosFields = [
+                    { id: 'v-pluma', label: 'VARIOS PLUMA' },
+                    { id: 'v-pemp', label: 'PEMP' },
+                    { id: 'v-atxabastar', label: 'VARIOS ATXABASTAR' },
+                    { id: 'v-escalera', label: 'VARIOS ESCALERA' },
+                    { id: 'v-gancho-escalera', label: 'VARIOS GANCHO ESCALERA' },
+                    { id: 'v-herreria-josu', label: 'VARIOS HERRERÍA JOSU' },
+                    { id: 'v-peldano', label: 'VARIOS PELDAÑO' },
+                    { id: 'v-sellado', label: 'VARIOS SELLADO' }
+                ];
+
+                variosFields.forEach(field => {
+                    const val = parseInt(document.getElementById(field.id).value) || 0;
+                    if (val > 0) {
+                        data.push([field.label, val]);
                     }
+                });
+
+                // Crear workbook y worksheet
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(data);
+
+                // Ajustar ancho de columnas
+                ws['!cols'] = [
+                    { wch: 20 }, // Código
+                    { wch: 10 }  // Cantidad
+                ];
+
+                XLSX.utils.book_append_sheet(wb, ws, 'BOM');
+
+                // Generar nombre de archivo
+                const cliente = document.getElementById('g-client').value || 'Cliente';
+                const fecha = document.getElementById('g-date').value || new Date().toISOString().split('T')[0];
+                const filename = `BOM_${cliente.replace(/\s+/g, '_')}_${fecha}.xlsx`;
+
+                // Descargar
+                XLSX.writeFile(wb, filename);
+            }
+
+
+            // --- GENERATE HTML REPORT ---
+            function generateReport() {
+                const cliente = document.getElementById('g-client').value || 'Cliente';
+                const obra = document.getElementById('g-site').value || 'Obra';
+                const fecha = document.getElementById('g-date').value || new Date().toISOString().split('T')[0];
+                let sistemaDesc = currentSystem;
+                if (currentSystem === 'barandilla') sistemaDesc = 'Barandilla R11';
+                else if (currentSystem === 'attika') sistemaDesc = 'Barandilla Attika';
+                else if (currentSystem === 'lightflex') sistemaDesc = 'Light Flex (Redes)';
+                else if (currentSystem === 'sand01') sistemaDesc = 'Línea de Vida (Sand01)';
+                else if (currentSystem === 'sand02') sistemaDesc = 'Línea de Vida (Sand02)';
+                else if (currentSystem === 'poste') sistemaDesc = 'Línea de Vida (Postes)';
+                else if (currentSystem === 'rail') sistemaDesc = 'Rail (TAURUS)';
+                else sistemaDesc = 'Sistema Desconocido'; // Fallback for any other system
+                const sistema = sistemaDesc;
+
+                // Capturar imagen del plano
+                const planCanvas = document.getElementById('geo-canvas');
+                const planImage = planCanvas.toDataURL('image/png');
+
+                // Obtener tabla BOM actual
+                const bomTableBody = document.getElementById('bom-table-body');
+                let bomTableHTML = '';
+                if (bomTableBody) {
+                    bomTableHTML = '<table style="width:100%; border-collapse:collapse; margin:20px 0;"><thead><tr style="background:#f8f9fa; border-bottom:2px solid #ddd;"><th style="padding:10px; text-align:left; border:1px solid #ddd;">Código</th><th style="padding:10px; text-align:left; border:1px solid #ddd;">Cantidad</th></tr></thead><tbody>';
+                    Array.from(bomTableBody.querySelectorAll('tr')).forEach(row => {
+                        bomTableHTML += '<tr>';
+                        Array.from(row.querySelectorAll('td')).forEach(cell => {
+                            bomTableHTML += `<td style="padding:10px; border:1px solid #eee;">${cell.innerHTML}</td>`;
+                        });
+                        bomTableHTML += '</tr>';
+                    });
+                    bomTableHTML += '</tbody></table>';
                 }
-            }
 
-            // Calculate rails
-            let numRailes6m = 0;
-            let numRailes3m = 0;
-            let longitudRecta = totalLength; // For simple calculation
-
-            if (usar6m && totalLength >= 6) {
-                numRailes6m = Math.floor(totalLength / 6);
-                const resto = totalLength - (numRailes6m * 6);
-                if (resto > 0) {
-                    numRailes3m = Math.ceil(resto / 3);
+                // Obtener tabla Leyenda del Plano
+                const legendTableBody = document.getElementById('legend-table-body');
+                let legendTableHTML = '';
+                if (legendTableBody && legendTableBody.innerHTML.trim() !== '') {
+                    legendTableHTML = '<h2 style="color:#0056b3; font-size:1.5rem; margin:30px 0 15px; border-bottom:2px solid #e67e22; padding-bottom:8px;">Leyenda del Plano</h2>';
+                    legendTableHTML += '<table style="width:100%; border-collapse:collapse; margin:20px 0;"><thead><tr style="background:#f8f9fa; border-bottom:2px solid #ddd;"><th style="padding:10px; text-align:left; border:1px solid #ddd; width:100px;">Número</th><th style="padding:10px; text-align:left; border:1px solid #ddd;">Descripción / Elementos</th></tr></thead><tbody>';
+                    Array.from(legendTableBody.querySelectorAll('tr')).forEach(row => {
+                        legendTableHTML += '<tr>';
+                        Array.from(row.querySelectorAll('td')).forEach(cell => {
+                            legendTableHTML += `<td style="padding:10px; border:1px solid #eee;">${cell.innerHTML}</td>`;
+                        });
+                        legendTableHTML += '</tr>';
+                    });
+                    legendTableHTML += '</tbody></table>';
                 }
-            } else {
-                numRailes3m = Math.ceil(totalLength / 3);
-            }
 
-            if (numRailes6m > 0) {
-                bom['TAURUS-RAIL-10-6000'] = numRailes6m;
-            }
-            if (numRailes3m > 0) {
-                bom['TAURUS-RAIL-10-3000'] = numRailes3m;
-            }
-
-            // Calculate unions
-            const totalSegmentos = numRailes6m + numRailes3m;
-            let numUniones = 0;
-
-            if (isClosed) {
-                numUniones = totalSegmentos; // Closed loop needs same number as segments
-            } else {
-                numUniones = totalSegmentos > 0 ? totalSegmentos - 1 : 0; // Open line needs segments - 1
-            }
-
-            if (numUniones > 0) {
-                const tienePackVE5 = (unionTipo === 'TAURUS-VB-10' || unionTipo === 'TAURUS-VB-12');
-
-                if (tienePackVE5 && optimizarVE5) {
-                    const numPacks = Math.floor(numUniones / 5);
-                    const numSueltas = numUniones % 5;
-
-                    if (numPacks > 0) {
-                        bom[`${unionTipo}-VE5`] = numPacks;
-                    }
-                    if (numSueltas > 0) {
-                        bom[unionTipo] = numSueltas;
-                    }
+                // Obtener fotos guardadas
+                let photosHTML = '';
+                if (savedPhotos.length > 0) {
+                    photosHTML = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:15px; margin:20px 0;">';
+                    savedPhotos.forEach((photo, idx) => {
+                        photosHTML += `<div style="border:1px solid #ddd; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);"><img src="${photo}" style="width:100%; height:auto; display:block;"><p style="padding:10px; margin:0; text-align:center; background:#f8f9fa; font-size:0.9rem;">Foto ${idx + 1}</p></div>`;
+                    });
+                    photosHTML += '</div>';
                 } else {
-                    bom[unionTipo] = numUniones;
+                    photosHTML = '<p style="color:#999; font-style:italic;">No se han guardado fotos en esta visita.</p>';
                 }
-            }
 
-            // Add curves
-            for (const [model, qty] of Object.entries(curveModels)) {
-                if (qty > 0) bom[model] = (bom[model] || 0) + qty;
-            }
+                // Obtener información de la sección Accesos, Seguridad, Varios
+                let technicalNotesHTML = '';
+                const variosFields = [
+                    { id: 'v-pluma', label: 'VARIOS PLUMA' },
+                    { id: 'v-pemp', label: 'PEMP' },
+                    { id: 'v-atxabastar', label: 'VARIOS ATXABASTAR' },
+                    { id: 'v-escalera', label: 'VARIOS ESCALERA' },
+                    { id: 'v-gancho-escalera', label: 'VARIOS GANCHO ESCALERA' },
+                    { id: 'v-herreria-josu', label: 'VARIOS HERRERÍA JOSU' },
+                    { id: 'v-peldano', label: 'VARIOS PELDAÑO' },
+                    { id: 'v-sellado', label: 'VARIOS SELLADO' }
+                ];
 
-            // Add terminations
-            if (isClosed) {
-                bom['TAURUS-EA-11'] = 1; // Solo entrada/salida
-            } else {
-                bom['TAURUS-EA-10'] = 1; // Final
-                bom['TAURUS-EA-11'] = 1; // Entrada/salida
-            }
-
-            // Add cart
-            bom[carroTipo] = 1;
-
-            // Add signs
-            bom['TAURUS-TYP-10'] = 1;
-            if (totalSoportes > 0) {
-                bom['CARTEL ADEKUA'] = 1;
-            }
-
-            return bom;
-        }
-
-        // --- EXPORT TO EXCEL ---
-        function exportToExcel() {
-            console.log("DEBUG: exportToExcel called");
-            console.log("DEBUG: currentSystem:", currentSystem);
-            if (typeof XLSX === 'undefined') {
-                alert("Error: Biblioteca XLSX no cargada properly.");
-                return;
-            }
-            let bom = {};
-
-            if (currentSystem === 'rail') {
-                // Rail system
-                bom = calculateRailBOM();
-            } else if (currentSystem === 'barandilla') {
-                bom = calculateBarandillaBOM();
-            } else if (currentSystem === 'attika') {
-                const startConf = document.getElementById('b-start-conf').value;
-                const endConf = document.getElementById('b-end-conf').value;
-                let tramosData = [];
-                document.querySelectorAll('.b-tramo').forEach(el => {
-                    tramosData.push({
-                        len: parseFloat(el.querySelector('.b-len').value) || 0,
-                        rodapie: el.querySelector('.b-rodapie').checked
-                    });
+                let hasVarios = false;
+                let variosListItems = '';
+                variosFields.forEach(field => {
+                    const val = parseInt(document.getElementById(field.id).value) || 0;
+                    if (val > 0) {
+                        hasVarios = true;
+                        variosListItems += `<li style="margin:5px 0;"><strong>${field.label}</strong>: ${val}</li>`;
+                    }
                 });
-                const sol = solveAttikaPosts(tramosData, startConf, endConf);
-                bom = calculateAttikaBOM(tramosData, sol, startConf, endConf);
-            } else if (currentSystem === 'lightflex') {
-                const len = parseFloat(document.getElementById('lf-len').value) || 0;
-                const width = parseFloat(document.getElementById('lf-width').value) || 0;
-                const qty = parseInt(document.getElementById('lf-qty').value) || 1;
-                const bracketType = document.getElementById('lf-bracket-type').value;
-                const rwaBars = {
-                    'LIGHT-FLEX-RWA-01-1165': parseInt(document.getElementById('lf-rwa-1165').value) || 0,
-                    'LIGHT-FLEX-RWA-01-1525': parseInt(document.getElementById('lf-rwa-1525').value) || 0,
-                    'LIGHT-FLEX-RWA-01-1900': parseInt(document.getElementById('lf-rwa-1900').value) || 0
-                };
-                const res = solveLightFlexComponents(len, width, bracketType, rwaBars, {
-                    mode: document.getElementById('lf-rwa-mode').value,
-                    gap_mm: parseFloat(document.getElementById('lf-rwa-gap').value) || 0,
-                    axis: document.getElementById('lf-rwa-axis').value,
-                    location: document.getElementById('lf-rwa-loc').value
-                });
-                const finalBom = {};
-                Object.entries(res.comp).forEach(([k, v]) => { finalBom[k] = v * qty; });
-                bom = finalBom;
-            } else if (currentSystem === 'sand01' || currentSystem === 'sand02' || currentSystem === 'poste') {
-                bom = calculateLineBOM();
-            } else {
-                alert('La exportación a Excel solo está disponible para Sand02, Postes, Rail, Barandilla, Attika y Light Flex actualmente.');
-                return;
-            }
 
-            if (Object.keys(bom).length === 0) {
-                alert('No hay datos para exportar. Por favor, completa la geometría primero.');
-                return;
-            }
-
-            // Crear array de datos para Excel
-            const data = [['Código', 'Cantidad']];
-
-            // Mantener el orden como en las imágenes del usuario
-            // El orden está determinado por el orden de inserción en el objeto bom
-            for (const [codigo, cantidad] of Object.entries(bom)) {
-                data.push([codigo, cantidad]);
-            }
-
-            // Añadir campos de la sección Accesos, Seguridad, Varios
-            const variosFields = [
-                { id: 'v-pluma', label: 'VARIOS PLUMA' },
-                { id: 'v-pemp', label: 'PEMP' },
-                { id: 'v-atxabastar', label: 'VARIOS ATXABASTAR' },
-                { id: 'v-escalera', label: 'VARIOS ESCALERA' },
-                { id: 'v-gancho-escalera', label: 'VARIOS GANCHO ESCALERA' },
-                { id: 'v-herreria-josu', label: 'VARIOS HERRERÍA JOSU' },
-                { id: 'v-peldano', label: 'VARIOS PELDAÑO' },
-                { id: 'v-sellado', label: 'VARIOS SELLADO' }
-            ];
-
-            variosFields.forEach(field => {
-                const val = parseInt(document.getElementById(field.id).value) || 0;
-                if (val > 0) {
-                    data.push([field.label, val]);
+                if (hasVarios) {
+                    technicalNotesHTML = '<div style="background:#f8f9fa; border-left:4px solid #0056b3; padding:15px; border-radius:4px; margin:20px 0;">';
+                    technicalNotesHTML += '<h3 style="margin:0 0 10px; color:#0056b3; font-size:1.1rem;">🛠️ Accesos, Seguridad, Varios</h3>';
+                    technicalNotesHTML += '<ul style="margin:0; padding-left:20px;">' + variosListItems + '</ul></div>';
                 }
-            });
-
-            // Crear workbook y worksheet
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(data);
-
-            // Ajustar ancho de columnas
-            ws['!cols'] = [
-                { wch: 20 }, // Código
-                { wch: 10 }  // Cantidad
-            ];
-
-            XLSX.utils.book_append_sheet(wb, ws, 'BOM');
-
-            // Generar nombre de archivo
-            const cliente = document.getElementById('g-client').value || 'Cliente';
-            const fecha = document.getElementById('g-date').value || new Date().toISOString().split('T')[0];
-            const filename = `BOM_${cliente.replace(/\s+/g, '_')}_${fecha}.xlsx`;
-
-            // Descargar
-            XLSX.writeFile(wb, filename);
-        }
 
 
-        // --- GENERATE HTML REPORT ---
-        function generateReport() {
-            const cliente = document.getElementById('g-client').value || 'Cliente';
-            const obra = document.getElementById('g-site').value || 'Obra';
-            const fecha = document.getElementById('g-date').value || new Date().toISOString().split('T')[0];
-            let sistemaDesc = currentSystem;
-            if (currentSystem === 'barandilla') sistemaDesc = 'Barandilla R11';
-            else if (currentSystem === 'attika') sistemaDesc = 'Barandilla Attika';
-            else if (currentSystem === 'lightflex') sistemaDesc = 'Light Flex (Redes)';
-            else if (currentSystem === 'sand01') sistemaDesc = 'Línea de Vida (Sand01)';
-            else if (currentSystem === 'sand02') sistemaDesc = 'Línea de Vida (Sand02)';
-            else if (currentSystem === 'poste') sistemaDesc = 'Línea de Vida (Postes)';
-            else if (currentSystem === 'rail') sistemaDesc = 'Rail (TAURUS)';
-            else sistemaDesc = 'Sistema Desconocido'; // Fallback for any other system
-            const sistema = sistemaDesc;
-
-            // Capturar imagen del plano
-            const planCanvas = document.getElementById('geo-canvas');
-            const planImage = planCanvas.toDataURL('image/png');
-
-            // Obtener tabla BOM actual
-            const bomTableBody = document.getElementById('bom-table-body');
-            let bomTableHTML = '';
-            if (bomTableBody) {
-                bomTableHTML = '<table style="width:100%; border-collapse:collapse; margin:20px 0;"><thead><tr style="background:#f8f9fa; border-bottom:2px solid #ddd;"><th style="padding:10px; text-align:left; border:1px solid #ddd;">Código</th><th style="padding:10px; text-align:left; border:1px solid #ddd;">Cantidad</th></tr></thead><tbody>';
-                Array.from(bomTableBody.querySelectorAll('tr')).forEach(row => {
-                    bomTableHTML += '<tr>';
-                    Array.from(row.querySelectorAll('td')).forEach(cell => {
-                        bomTableHTML += `<td style="padding:10px; border:1px solid #eee;">${cell.innerHTML}</td>`;
-                    });
-                    bomTableHTML += '</tr>';
-                });
-                bomTableHTML += '</tbody></table>';
-            }
-
-            // Obtener tabla Leyenda del Plano
-            const legendTableBody = document.getElementById('legend-table-body');
-            let legendTableHTML = '';
-            if (legendTableBody && legendTableBody.innerHTML.trim() !== '') {
-                legendTableHTML = '<h2 style="color:#0056b3; font-size:1.5rem; margin:30px 0 15px; border-bottom:2px solid #e67e22; padding-bottom:8px;">Leyenda del Plano</h2>';
-                legendTableHTML += '<table style="width:100%; border-collapse:collapse; margin:20px 0;"><thead><tr style="background:#f8f9fa; border-bottom:2px solid #ddd;"><th style="padding:10px; text-align:left; border:1px solid #ddd; width:100px;">Número</th><th style="padding:10px; text-align:left; border:1px solid #ddd;">Descripción / Elementos</th></tr></thead><tbody>';
-                Array.from(legendTableBody.querySelectorAll('tr')).forEach(row => {
-                    legendTableHTML += '<tr>';
-                    Array.from(row.querySelectorAll('td')).forEach(cell => {
-                        legendTableHTML += `<td style="padding:10px; border:1px solid #eee;">${cell.innerHTML}</td>`;
-                    });
-                    legendTableHTML += '</tr>';
-                });
-                legendTableHTML += '</tbody></table>';
-            }
-
-            // Obtener fotos guardadas
-            let photosHTML = '';
-            if (savedPhotos.length > 0) {
-                photosHTML = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:15px; margin:20px 0;">';
-                savedPhotos.forEach((photo, idx) => {
-                    photosHTML += `<div style="border:1px solid #ddd; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);"><img src="${photo}" style="width:100%; height:auto; display:block;"><p style="padding:10px; margin:0; text-align:center; background:#f8f9fa; font-size:0.9rem;">Foto ${idx + 1}</p></div>`;
-                });
-                photosHTML += '</div>';
-            } else {
-                photosHTML = '<p style="color:#999; font-style:italic;">No se han guardado fotos en esta visita.</p>';
-            }
-
-            // Obtener información de la sección Accesos, Seguridad, Varios
-            let technicalNotesHTML = '';
-            const variosFields = [
-                { id: 'v-pluma', label: 'VARIOS PLUMA' },
-                { id: 'v-pemp', label: 'PEMP' },
-                { id: 'v-atxabastar', label: 'VARIOS ATXABASTAR' },
-                { id: 'v-escalera', label: 'VARIOS ESCALERA' },
-                { id: 'v-gancho-escalera', label: 'VARIOS GANCHO ESCALERA' },
-                { id: 'v-herreria-josu', label: 'VARIOS HERRERÍA JOSU' },
-                { id: 'v-peldano', label: 'VARIOS PELDAÑO' },
-                { id: 'v-sellado', label: 'VARIOS SELLADO' }
-            ];
-
-            let hasVarios = false;
-            let variosListItems = '';
-            variosFields.forEach(field => {
-                const val = parseInt(document.getElementById(field.id).value) || 0;
-                if (val > 0) {
-                    hasVarios = true;
-                    variosListItems += `<li style="margin:5px 0;"><strong>${field.label}</strong>: ${val}</li>`;
-                }
-            });
-
-            if (hasVarios) {
-                technicalNotesHTML = '<div style="background:#f8f9fa; border-left:4px solid #0056b3; padding:15px; border-radius:4px; margin:20px 0;">';
-                technicalNotesHTML += '<h3 style="margin:0 0 10px; color:#0056b3; font-size:1.1rem;">🛠️ Accesos, Seguridad, Varios</h3>';
-                technicalNotesHTML += '<ul style="margin:0; padding-left:20px;">' + variosListItems + '</ul></div>';
-            }
-
-
-            // Generar HTML del informe
-            const reportHTML = `<!DOCTYPE html>
+                // Generar HTML del informe
+                const reportHTML = `<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -4473,28 +4481,28 @@
 </body>
 </html>`;
 
-            // Descargar como archivo HTML
-            const blob = new Blob([reportHTML], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Informe_${cliente.replace(/\s+/g, '_')}_${fecha}.html`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
+                // Descargar como archivo HTML
+                const blob = new Blob([reportHTML], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Informe_${cliente.replace(/\s+/g, '_')}_${fecha}.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
 
-        // --- EXPORT ---
-        function exportJSON() {
-            const data = { general: { cliente: document.getElementById('g-client').value, obra: document.getElementById('g-site').value, sistema: currentSystem } };
-            // (Lógica de exportación igual a v13)
-            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })); a.download = `Visita.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        }
+            // --- EXPORT ---
+            function exportJSON() {
+                const data = { general: { cliente: document.getElementById('g-client').value, obra: document.getElementById('g-site').value, sistema: currentSystem } };
+                // (Lógica de exportación igual a v13)
+                const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })); a.download = `Visita.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            }
 
-        addBarandillaTramo();
-        addLvTramo();
-        toggleLvConfig();
+            addBarandillaTramo();
+            addLvTramo();
+            toggleLvConfig();
     </script>
 </body>
 
