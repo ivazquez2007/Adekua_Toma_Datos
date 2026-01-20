@@ -2268,7 +2268,7 @@
                     });
                     // Note: We might want to count these as extras for BOM, or handle separately?
                     // original code counted all manual as totalExtras. Let's keep consistency.
-                    totalExtras++;
+                    // totalExtras++; // FIX: STOP does not add a base/extra support
                 });
 
                 // 6. Sort all positions to ensure correct drawing order
@@ -3978,7 +3978,7 @@
                                     // Given it's "STOP", let's assume it's just a sign. So we STILL need the post if posts are used.
                                     // BUT user request implies adding an element.
                                     // Let's stick to standard behavior: Manual point = Post + Accessory, unless explicit otherwise.
-                                    if (document.getElementById('chk-use-posts')?.checked) {
+                                    if (document.getElementById('chk-use-posts')?.checked && post.ref !== 'STOP') {
                                         bom[model] = (bom[model] || 0) + 1;
                                     }
                                 } else {
