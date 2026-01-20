@@ -2895,22 +2895,26 @@
                             });
 
                             let compsM = [];
-                            if (currentSystem !== 'rail') {
-                                const support = currentSystem === 'poste' ? document.getElementById('lv-post-model').value : currentSystem.toUpperCase();
-                                compsM.push(support);
-                                if (currentSystem === 'sand01') compsM.push(document.getElementById('sand01-fix-type').value);
-                                else if (currentSystem === 'sand02') compsM.push('BEF 306-VE250');
+                            if (post.ref === 'STOP') {
+                                compsM.push('STOP');
                             } else {
-                                const tipo = document.getElementById('rail-soporte-tipo').value;
-                                const model = (tipo === 'sta') ? document.getElementById('rail-sta-model').value : (tipo === 'bef' ? document.getElementById('rail-bef-model').value : document.getElementById('rail-eb-model').value);
-                                compsM.push(model);
-                                if (tipo === 'sta') compsM.push('TAURUS-BEF-30');
-                                else if (tipo === 'eb') {
-                                    compsM.push('BEF-411'); compsM.push(document.getElementById('rail-bef-adicional').value);
-                                    if (document.getElementById('rail-varilla-m16').checked) compsM.push('VAR-M16');
+                                if (currentSystem !== 'rail') {
+                                    const support = currentSystem === 'poste' ? document.getElementById('lv-post-model').value : currentSystem.toUpperCase();
+                                    compsM.push(support);
+                                    if (currentSystem === 'sand01') compsM.push(document.getElementById('sand01-fix-type').value);
+                                    else if (currentSystem === 'sand02') compsM.push('BEF 306-VE250');
+                                } else {
+                                    const tipo = document.getElementById('rail-soporte-tipo').value;
+                                    const model = (tipo === 'sta') ? document.getElementById('rail-sta-model').value : (tipo === 'bef' ? document.getElementById('rail-bef-model').value : document.getElementById('rail-eb-model').value);
+                                    compsM.push(model);
+                                    if (tipo === 'sta') compsM.push('TAURUS-BEF-30');
+                                    else if (tipo === 'eb') {
+                                        compsM.push('BEF-411'); compsM.push(document.getElementById('rail-bef-adicional').value);
+                                        if (document.getElementById('rail-varilla-m16').checked) compsM.push('VAR-M16');
+                                    }
                                 }
+                                compsM.push(post.ref);
                             }
-                            compsM.push(post.ref);
                             legendData[manualLabel] = compsM.join(' + ');
                         } else {
                             drawTextWithOffset(ctx, `lv_auto_${idx}_${post.pos.toFixed(2)}`, "2", textX, textY, {
