@@ -1278,7 +1278,7 @@
         const EB_LIST = ['EB-10', 'EB-11', 'EB-12', 'EB-13', 'EB-15', 'EB-16', 'EB-17'];
         const SZH_LIST = ['SZH-10', 'SZH-11', 'SZH-12', 'SZH-13', 'SZH-15', 'SZH-16', 'SZH-17'];
         const EDLE_LIST = ['EDLE-10', 'EDLE-11', 'EDLE-12', 'EDLE-13', 'EDLE-15', 'EDLE-16', 'EDLE-17', 'EDLE-19', 'EDLE-50', 'EDLE-51'];
-        const EXTRA_ELEMENTS = ['EDLE-19', 'SZH-10', 'POSTE-REFUERZO', 'OTRO'];
+        const EXTRA_ELEMENTS = ['EDLE-19', 'SZH-10', 'POSTE-REFUERZO', 'STOP', 'OTRO'];
         const RAIL_BEF_LIST = ['TAURUS-BEF-10', 'TAURUS-BEF-10-VE5', 'TAURUS-BEF-12', 'TAURUS-BEF-13-VE5', 'TAURUS-BEF-20', 'TAURUS-BEF-21', 'TAURUS-BEF-30', 'TAURUS-BEF-41', 'TAURUS-BEF-411'];
         const RAIL_CARRO_LIST = ['TAURUS-GLEIT-H-11', 'TAURUS-GLEIT-A-31', 'TAURUS-GLEIT-10', 'TAURUS-GLEIT-11', 'TAURUS-GLEIT-12', 'TAURUS-GLEIT-13'];
         const RAIL_UNION_LIST = ['TAURUS-VB-10', 'TAURUS-VB-11', 'TAURUS-VB-12'];
@@ -1713,6 +1713,7 @@
                 <div style="margin-top:10px; border-top:1px dashed #ccc; padding-top:5px;">
                     <div class="manual-points-list"></div>
                     <button class="btn-mini" onclick="addManualPoint(this)">+ P. Intermedio Manual</button>
+                    <button class="btn-mini" style="background:#e67e22;" onclick="addManualPoint(this, 'STOP')">🛑 Añadir STOP</button>
                 </div>
                 <div style="margin-top:10px; padding:10px; background:#e3f2fd;">
                     <label>Al final:</label>
@@ -1727,8 +1728,9 @@
             drawPreview();
         }
 
-        function addManualPoint(btn) {
-            btn.previousElementSibling.insertAdjacentHTML('beforeend', `<div class="manual-point-row"><input type="number" class="mp-dist" placeholder="Dist" style="width:70px;" oninput="drawPreview()"><select class="mp-type" onchange="drawPreview()">${getExtraElemOptions()}</select><button onclick="this.parentElement.remove(); drawPreview()" style="color:red; border:none;">×</button></div>`);
+        function addManualPoint(btn, defaultType) {
+            const type = defaultType || EXTRA_ELEMENTS[0];
+            btn.parentNode.querySelector('.manual-points-list').insertAdjacentHTML('beforeend', `<div class="manual-point-row"><input type="number" class="mp-dist" placeholder="Dist" style="width:70px;" oninput="drawPreview()"><select class="mp-type" onchange="drawPreview()">${EXTRA_ELEMENTS.map(e => `<option value="${e}" ${e === type ? 'selected' : ''}>${e}</option>`).join('')}</select><button onclick="this.parentElement.remove(); drawPreview()" style="color:red; border:none;">×</button></div>`);
         }
 
         function syncUITramos() {
@@ -1782,6 +1784,7 @@
                 <div style="margin-top:10px; border-top:1px dashed #ccc; padding-top:5px;">
                     <div class="manual-points-list"></div>
                     <button class="btn-mini" onclick="addManualPoint(this)">+ P. Intermedio Manual</button>
+                    <button class="btn-mini" style="background:#e67e22;" onclick="addManualPoint(this, 'STOP')">🛑 Añadir STOP</button>
                 </div>
                 <div style="margin-top:10px; padding:10px; background:#e3f2fd;">
                     <label>Al final:</label>
@@ -3888,16 +3891,17 @@
                     const isShared = document.getElementById('chk-shared-support')?.checked;
 
                     // 1. Structural Nodes (Start, Corners, End)
-                    // Total nodes = tramosData.length + 1
-                    const numNodes = tramosData.length + 1;
-                    for (let i = 0; i < numNodes; i++) {
-                        // If shared support is active, skip the last node (Poste Final) 
-                        // because it shares the post with Node 0 (Poste Inicial)
-                        if (isShared && i === numNodes - 1) continue;
+                    if (document.getElementById('chk-use-posts')?.checked) { // FIX: Only count posts if "Use Posts" is checked
+                        const numNodes = tramosData.length + 1;
+                        for (let i = 0; i < numNodes; i++) {
+                            // If shared support is active, skip the last node (Poste Final) 
+                            // because it shares the post with Node 0 (Poste Inicial)
+                            if (isShared && i === numNodes - 1) continue;
 
-                        const nodeKey = `node_${i}`;
-                        const model = customPostSelections[nodeKey] || defaultModel;
-                        bom[model] = (bom[model] || 0) + 1;
+                            const nodeKey = `node_${i}`;
+                            const model = customPostSelections[nodeKey] || defaultModel;
+                            bom[model] = (bom[model] || 0) + 1;
+                        }
                     }
 
                     // 2. Intermediate Posts
@@ -3906,7 +3910,29 @@
                             segment.forEach((post, postIdx) => {
                                 const key = `${segIdx}_${postIdx}`;
                                 const model = customPostSelections[key] || defaultModel;
-                                bom[model] = (bom[model] || 0) + 1;
+
+                                if (post.type === 'manual') {
+                                    // Manual points (Stop, Extra, etc.) count as themselves
+                                    const mType = post.ref;
+                                    bom[mType] = (bom[mType] || 0) + 1;
+
+                                    // If "Use Posts" is active, we generally add a structural post unless it's a STOP
+                                    // (Assuming STOP is just a sign/accessory on the cable, not a structural support replacing the post)
+                                    // However, solveLvPosts treated it as a node, so geometrically it's a support.
+                                    // IF we assume STOP doesn't remove the need for a post (it's add-on), we add the post.
+                                    // IF we assume STOP replaces the post (e.g. it's a special post), we don't.
+                                    // Given it's "STOP", let's assume it's just a sign. So we STILL need the post if posts are used.
+                                    // BUT user request implies adding an element.
+                                    // Let's stick to standard behavior: Manual point = Post + Accessory, unless explicit otherwise.
+                                    if (document.getElementById('chk-use-posts')?.checked) {
+                                        bom[model] = (bom[model] || 0) + 1;
+                                    }
+                                } else {
+                                    // Auto points (SZH)
+                                    if (document.getElementById('chk-use-posts')?.checked) {
+                                        bom[model] = (bom[model] || 0) + 1;
+                                    }
+                                }
                             });
                         });
                     }
