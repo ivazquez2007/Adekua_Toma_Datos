@@ -2205,21 +2205,75 @@
                 maxDist = customDist;
             }
 
-            let totalSZH = 0; let totalExtras = 0; const segmentResults = [];
+            let totalSZH = 0;
+            let totalExtras = 0;
+            const segmentResults = [];
+
             tramosData.forEach(tramo => {
-                if (tramo.len <= 0) { segmentResults.push([]); return; }
-                let manualPoints = tramo.manual.map(m => ({ dist: parseFloat(m.dist), type: m.type })).filter(m => m.dist > 0 && m.dist < tramo.len).sort((a, b) => a.dist - b.dist);
-                let nodes = [0, ...manualPoints.map(m => m.dist), tramo.len];
+                if (tramo.len <= 0) {
+                    segmentResults.push([]);
+                    return;
+                }
+
+                // 1. Prepare Manual Points
+                const allManualPoints = tramo.manual.map(m => ({
+                    dist: parseFloat(m.dist),
+                    type: m.type
+                })).filter(m => m.dist > 0 && m.dist < tramo.len).sort((a, b) => a.dist - b.dist);
+
+                // 2. Separate Structural vs Non-Structural (STOP)
+                // STOP elements do NOT break the span for SZH calculation
+                const structuralPoints = allManualPoints.filter(m => m.type !== 'STOP');
+                const nonStructuralPoints = allManualPoints.filter(m => m.type === 'STOP');
+
+                // 3. Define Nodes for span calculation (Start + Structural Manuals + End)
+                let nodes = [0, ...structuralPoints.map(m => m.dist), tramo.len];
                 let postsPositions = [];
+
+                // 4. Calculate Spans and Auto Posts
                 for (let i = 0; i < nodes.length - 1; i++) {
                     const span = nodes[i + 1] - nodes[i];
-                    if (i > 0) { postsPositions.push({ pos: nodes[i], type: 'manual', ref: manualPoints[i - 1].type }); totalExtras++; }
+
+                    // Add the structural point at nodes[i] (except start which is 0)
+                    if (i > 0) {
+                        postsPositions.push({
+                            pos: nodes[i],
+                            type: 'manual',
+                            ref: structuralPoints[i - 1].type
+                        });
+                        totalExtras++;
+                    }
+
+                    // Fill span with SZH
                     if (span > 0) {
-                        const spaces = Math.ceil(span / maxDist);
+                        const spaces = Math.ceil(span / maxDist); // maxDist comes from closure/scope
                         const realDist = span / spaces;
-                        for (let k = 1; k < spaces; k++) { postsPositions.push({ pos: nodes[i] + (realDist * k), type: 'auto', ref: 'SZH' }); totalSZH++; }
+                        for (let k = 1; k < spaces; k++) {
+                            postsPositions.push({
+                                pos: nodes[i] + (realDist * k),
+                                type: 'auto',
+                                ref: 'SZH' // Can be customized later
+                            });
+                            totalSZH++;
+                        }
                     }
                 }
+
+                // 5. Add Non-Structural Points (STOP)
+                nonStructuralPoints.forEach(np => {
+                    postsPositions.push({
+                        pos: np.dist,
+                        type: 'manual',
+                        ref: np.type
+                    });
+                    // Note: We might want to count these as extras for BOM, or handle separately?
+                    // original code counted all manual as totalExtras. Let's keep consistency.
+                    totalExtras++;
+                });
+
+                // 6. Sort all positions to ensure correct drawing order
+                postsPositions.sort((a, b) => a.pos - b.pos);
+
                 segmentResults.push(postsPositions);
             });
             const result = { segments: segmentResults, countSZH: totalSZH, countExtras: totalExtras };
