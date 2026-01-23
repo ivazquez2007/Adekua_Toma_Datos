@@ -3891,12 +3891,19 @@
             let countF50 = 0;
             lengths.forEach((L, i) => {
                 if (toeBoards[i]) {
-                    // ... (F20/F23 counts unchanged) ...
+                    const numPieces = Math.ceil(L / 3);
+                    countF20 += numPieces;
+                    countF23 += Math.max(0, numPieces - 1);
+
                     if (sol.posts && sol.posts[i]) {
                         sol.posts[i].forEach((p, pIdx) => {
                             const key = `${i}_${pIdx}`;
                             if (manualPostOverrides[key] !== null) countF50++;
                         });
+                    }
+
+                    if (i < lengths.length - 1 && toeBoards[i + 1]) {
+                        countF26 += 1; // Corner union
                     }
                 }
             });
