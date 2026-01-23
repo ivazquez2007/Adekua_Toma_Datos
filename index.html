@@ -3117,6 +3117,19 @@
                     if (idx < tramosData.length - 1) angleAcum = tramosData[idx + 1].angle;
                 });
 
+                // Show Post Editor for Lifelines too!
+                if (currentSystem === 'sand01' || currentSystem === 'sand02' || currentSystem === 'poste') {
+                    const editorCont = document.getElementById('b-posts-editor-container');
+                    if (editorCont) {
+                        editorCont.style.display = 'block';
+                        editorCont.querySelector('h3').innerHTML = `📍 Edición de Soportes <button class="btn-mini" style="background:#888; font-size:0.7rem;" onclick="clearManualOverrides()">↺ Reset</button>`;
+                    }
+                    renderPostEditor(sol);
+                }
+
+                const realBom = currentSystem === 'rail' ? calculateRailBOM() : calculateLineBOM();
+                renderBOMTableSimple(realBom);
+                renderLegendTable(legendData);
             }
         }
 
