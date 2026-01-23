@@ -1472,6 +1472,7 @@
 
         function setSystem(sys) {
             currentSystem = sys;
+            clearManualOverrides(); // Reset edits when switching systems
             document.getElementById('btn-barandilla').classList.toggle('active', sys === 'barandilla');
             document.getElementById('btn-sand01').classList.toggle('active', sys === 'sand01');
             document.getElementById('btn-sand02').classList.toggle('active', sys === 'sand02');
