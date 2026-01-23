@@ -3117,30 +3117,25 @@
                     if (idx < tramosData.length - 1) angleAcum = tramosData[idx + 1].angle;
                 });
 
-                function drawCotaGroupLV(pStart, rad, dimPerpRad, group, toScreen, ctx, idx) {
-                    const startD = group[0].d1;
-                    const endD = group[group.length - 1].d2;
-                    const distVal = group[0].len;
-                    const midD = (startD + endD) / 2;
-                    const offsetM = 0.5; // Slightly closer than barandilla
-
-                    const pMid = {
-                        x: pStart.x + midD * Math.cos(rad) + offsetM * Math.cos(dimPerpRad),
-                        y: pStart.y + midD * Math.sin(rad) + offsetM * Math.sin(dimPerpRad)
-                    };
-                    const sMid = toScreen(pMid.x, pMid.y);
-
-                    drawTextWithOffset(ctx, `lv_cota_${idx}_group_${group[0].d1.toFixed(2)}`, distVal.toFixed(2), sMid.x, sMid.y, {
-                        color: '#333', font: 'bold 11px Arial', align: 'center', baseline: 'middle'
-                    });
-
-                    // Removed dimension marker lines
-                }
-
-                const realBom = currentSystem === 'rail' ? calculateRailBOM() : calculateLineBOM();
-                renderBOMTableSimple(realBom);
-                renderLegendTable(legendData);
             }
+        }
+
+        function drawCotaGroupLV(pStart, rad, dimPerpRad, group, toScreen, ctx, idx) {
+            const startD = group[0].d1;
+            const endD = group[group.length - 1].d2;
+            const distVal = group[0].len;
+            const midD = (startD + endD) / 2;
+            const offsetM = 0.5;
+
+            const pMid = {
+                x: pStart.x + midD * Math.cos(rad) + offsetM * Math.cos(dimPerpRad),
+                y: pStart.y + midD * Math.sin(rad) + offsetM * Math.sin(dimPerpRad)
+            };
+            const sMid = toScreen(pMid.x, pMid.y);
+
+            drawTextWithOffset(ctx, `lv_cota_${idx}_group_${group[0].d1.toFixed(2)}`, distVal.toFixed(2), sMid.x, sMid.y, {
+                color: '#333', font: 'bold 11px Arial', align: 'center', baseline: 'middle'
+            });
         }
 
         function renderLegendTable(data) {
