@@ -3138,35 +3138,34 @@
                 const realBom = currentSystem === 'rail' ? calculateRailBOM() : calculateLineBOM();
                 renderBOMTableSimple(realBom);
                 renderLegendTable(legendData);
-                // Intermedios & COTAS
-                let angleAcum = tramosData.length ? tramosData[0].angle : 0;
-                const sideSign = currentSystem === 'barandilla' ? (document.getElementById('b-side').value === 'left' ? 1 : -1) : 1;
-
-                tramosData.forEach((tramo, idx) => {
-                    // ... (omitting rendering logic for brevity, it's fine)
-                });
-
-                // Show Post Editor for Lifelines too!
-                if (currentSystem === 'sand01' || currentSystem === 'sand02' || currentSystem === 'poste') {
-                    // Adjust UI container for visibility
-                    const editorCont = document.getElementById('b-posts-editor-container');
-                    if (editorCont) {
-                        editorCont.style.display = 'block';
-                        // Update title color to match system if desired, or keep generic
-                        editorCont.querySelector('h3').innerHTML = `📍 Edición de Soportes <button class="btn-mini" style="background:#888; font-size:0.7rem;" onclick="clearManualOverrides()">↺ Reset</button>`;
-                    }
-                    renderPostEditor(sol);
-                }
-
-                const realBom = currentSystem === 'rail' ? calculateRailBOM() : calculateLineBOM();
-                renderBOMTableSimple(realBom);
-                renderLegendTable(legendData);
             }
         }
-        const tbody = document.getElementById('bom-table-body'); tbody.innerHTML = '';
-        Object.entries(data).forEach(([sku, qty]) => {
-            tbody.insertAdjacentHTML('beforeend', `<tr><td><strong>${sku}</strong></td><td>${qty}</td></tr>`);
-        });
+
+        function renderLegendTable(data) {
+            const lbody = document.getElementById('legend-table-body');
+            if (lbody) {
+                lbody.innerHTML = '';
+                Object.entries(data).sort((a, b) => a[0] - b[0]).forEach(([num, desc]) => {
+                    lbody.insertAdjacentHTML('beforeend', `<tr><td><center><strong>${num}</strong></center></td><td>${desc}</td></tr>`);
+                });
+
+                // Toggle visibility of legend container
+                const container = document.getElementById('legend-table-container');
+                if (container) {
+                    if (Object.keys(data).length > 0) container.classList.remove('hidden');
+                    else container.classList.add('hidden');
+                }
+            }
+        }
+
+        function renderBOMTableSimple(data) {
+            const tbody = document.getElementById('bom-table-body');
+            if (tbody) {
+                tbody.innerHTML = '';
+                Object.entries(data).forEach(([sku, qty]) => {
+                    tbody.insertAdjacentHTML('beforeend', `<tr><td><strong>${sku}</strong></td><td>${qty}</td></tr>`);
+                });
+            }
         }
 
         // --- FOTOS & OVERLAY ---
